@@ -1,0 +1,2 @@
+proseWrap: "always";
+singleAttributePerLine: true;
