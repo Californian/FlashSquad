@@ -24,7 +24,7 @@ import { FlashSquadAppShell } from "@/components";
 import { useMediaQuery } from "@mantine/hooks";
 
 const GetSquadPostsQuery = gql`
-  query GetSquadPosts($squadId: uuid!, $limit: Int = 20) {
+  query GetSquadPosts($squadId: Uuid, $limit: Int = 20) {
     posts(
       where: { squadId: { _eq: $squadId } }
       orderBy: { updatedAt: DESC }

@@ -20,7 +20,7 @@ interface SquadDetailsProps {
 }
 
 const GetCurrentSquadQuery = gql`
-  query GetCurrentSquad($squadId: uuid!) {
+  query GetCurrentSquad($squadId: Uuid) {
     squadsByPk(id: $squadId) {
       id
       contractAddress

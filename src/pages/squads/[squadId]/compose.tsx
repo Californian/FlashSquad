@@ -50,8 +50,8 @@ const FeedPage = () => {
   const [createPost, { loading, error, data }] = useMutation(gql`
     mutation CreatePost(
       $body: String!
-      $authorId: uuid!
-      $squadId: uuid!
+      $authorId: Uuid
+      $squadId: Uuid
       $postImageData: PostImageRelationshipsArrRelInsertInput
     ) {
       insertPostsOne(

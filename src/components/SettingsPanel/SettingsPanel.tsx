@@ -43,7 +43,7 @@ interface SettingsPanelProps {
 const PHI = (1 + Math.sqrt(5)) / 2;
 
 const GetCurrentUserQuery = gql`
-  query GetCurrentUser($userId: uuid!) {
+  query GetCurrentUser($userId: Uuid) {
     usersByPk(id: $userId) {
       id
       externalId
@@ -86,7 +86,7 @@ const GetCurrentUserQuery = gql`
 `;
 
 const GetCurrentSquadQuery = gql`
-  query GetCurrentSquad($squadId: uuid!) {
+  query GetCurrentSquad($squadId: Uuid) {
     squadsByPk(id: $squadId) {
       id
       contractAddress
@@ -169,7 +169,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       data: setProfileImageData,
     },
   ] = useMutation(gql`
-    mutation SetProfileImage($userId: uuid!, $profileImageId: uuid!) {
+    mutation SetProfileImage($userId: Uuid, $profileImageId: Uuid) {
       updateUsersByPk(
         pkColumns: { id: $userId }
         _set: { profileImageId: $profileImageId }
@@ -231,7 +231,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       data: setSquadImageData,
     },
   ] = useMutation(gql`
-    mutation SetSquadImage($squadId: uuid!, $squadImageId: uuid!) {
+    mutation SetSquadImage($squadId: Uuid, $squadImageId: Uuid) {
       updateSquadsByPk(
         pkColumns: { id: $squadId }
         _set: { squadImageId: $squadImageId }
@@ -265,7 +265,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       data: updateUserData,
     },
   ] = useMutation(gql`
-    mutation UpdateUser($userId: uuid!, $bio: String!) {
+    mutation UpdateUser($userId: Uuid, $bio: String!) {
       updateUsersByPk(pkColumns: { id: $userId }, _set: { bio: $bio }) {
         id
         bio

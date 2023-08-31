@@ -13,7 +13,7 @@ import { gql, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
 
 const GetUserSquadsQuery = gql`
-  query GetUserSquads($userId: uuid!) {
+  query GetUserSquads($userId: Uuid) {
     squads(
       where: {
         userSquadRelationships: {
