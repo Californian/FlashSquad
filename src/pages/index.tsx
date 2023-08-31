@@ -28,7 +28,7 @@ export default function HomePage() {
     key: "last-visited-squad",
   });
 
-  const { data: sessionData } = useSession();
+  const { data: sessionData, status } = useSession();
   const { user: currentUser } = sessionData ?? {};
 
   const {
@@ -40,11 +40,17 @@ export default function HomePage() {
     skip: !currentUser?.id || !!lastVisitedSquadId,
   });
 
+  console.log("squads", JSON.stringify(squads, undefined, 2));
+
   const router = useRouter();
 
   useEffect(() => {
+    console.log(status);
     if (status === "authenticated") {
+      console.log("auth'd");
       const firstSquadId = squads?.[0]?.id;
+      console.log(lastVisitedSquadId);
+      console.log(firstSquadId);
       if (lastVisitedSquadId) {
         router.push(`/squads/${lastVisitedSquadId}/feed`);
       } else if (firstSquadId) {

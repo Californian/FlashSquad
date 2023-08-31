@@ -82,7 +82,7 @@ const CreateOrUpdateSquadsMutation = gql`
   }
 `;
 
-const GetNFTsByWalletAddressQuery = gql`
+const GetNFTsByWalletAddressMutation = gql`
   query GetNFTsByWalletAddress($address: String!) {
     ethereum {
       walletByAddress(address: $address) {
@@ -96,24 +96,6 @@ const GetNFTsByWalletAddressQuery = gql`
                 tokenId
                 name
                 description
-                metadata
-              }
-            }
-          }
-        }
-      }
-    }
-    polygon {
-      walletByAddress(address: $address) {
-        walletNFTs {
-          edges {
-            node {
-              nft {
-                contractAddress
-                description
-                externalUrl
-                name
-                tokenId
                 metadata
               }
             }
@@ -265,15 +247,14 @@ export default async function auth(req: any, res: any) {
 	console.log("encodedToken", JSON.stringify(encodedToken, undefined, 2));
 
         const { data: nftsData } = await graphqlClient.query({
-          query: GetNFTsByWalletAddressQuery,
+          query: GetNFTsByWalletAddressMutation,
           variables: { address: sub },
         });
 
 	console.log("nftsData", JSON.stringify(nftsData, undefined, 2));
 
-	const nftEdges = [...nftsData?.ethereum?.walletByAddress?.walletNFTs?.edges, ...nftsData?.polygon?.walletByAddress?.walletNFTs?.edges]
         const squadObjects =
-          nftEdges?.map(
+          nftsData?.ethereum?.walletByAddress?.walletNFTs?.edges?.map(
             ({
               node: {
                 nft: {
@@ -307,7 +288,7 @@ export default async function auth(req: any, res: any) {
               userSquadRelationships: {
                 data: { isAdmin: true, userId },
                 onConflict: {
-                  constraint: "userSquadRelationshipsPkey",
+                  constraint: "user_squad_relationships_pkey",
                   updateColumns: ["updatedAt"],
                 },
               },
