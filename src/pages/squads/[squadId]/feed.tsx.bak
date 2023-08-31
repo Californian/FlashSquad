@@ -86,6 +86,7 @@ const FeedPage = () => {
   const [displayedPosts, setDisplayedPosts] = useState(posts);
 
   useEffect(() => {
+    console.log("p", posts);
     if (posts !== null) {
       setDisplayedPosts(posts);
     } else {
@@ -93,6 +94,7 @@ const FeedPage = () => {
     }
   }, [posts])
 
+  console.log("dp", displayedPosts);
 
   const theme = useMantineTheme();
   const screenIsThinMediaQuery = theme.fn

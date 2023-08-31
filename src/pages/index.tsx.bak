@@ -40,12 +40,17 @@ export default function HomePage() {
     skip: !currentUser?.id || !!lastVisitedSquadId,
   });
 
+  console.log("squads", JSON.stringify(squads, undefined, 2));
 
   const router = useRouter();
 
   useEffect(() => {
+    console.log(status);
     if (status === "authenticated") {
+      console.log("auth'd");
       const firstSquadId = squads?.[0]?.id;
+      console.log(lastVisitedSquadId);
+      console.log(firstSquadId);
       if (lastVisitedSquadId) {
         router.push(`/squads/${lastVisitedSquadId}/feed`);
       } else if (firstSquadId) {

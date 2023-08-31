@@ -59,6 +59,7 @@ const SquadMembersPage = () => {
       variables: { squadId },
     });
 
+  console.log(userSquadRelationships);
 
   return (
     <FlashSquadAppShell pageTitle="Members">
