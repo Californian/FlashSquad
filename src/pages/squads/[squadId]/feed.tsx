@@ -105,7 +105,7 @@ const FeedPage = () => {
   return (
     <FlashSquadAppShell>
       {displayedPosts !== null && displayedPosts?.length > 0 ? (<>
-        {(displayedPosts || []).map(
+        {displayedPosts?.map(
           (
             {
               id = "",
@@ -118,8 +118,8 @@ const FeedPage = () => {
                     altText: postImageAltText = "",
                     description = "",
                   } = {},
-                } = {},
-              ] = [{}],
+                } = {image: {}},
+              ] = [{image: {}}],
               author: {
                 displayName = "",
                 externalId = "",
