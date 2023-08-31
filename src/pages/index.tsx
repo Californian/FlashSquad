@@ -40,12 +40,14 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const firstSquadId = squads?.[0]?.id;
-    if (lastVisitedSquadId) {
-      router.push(`/squads/${lastVisitedSquadId}/feed`);
-    } else if (firstSquadId) {
-      setLastVisitedSquadId(firstSquadId);
-      router.push(`/squads/${firstSquadId}/feed`);
+    if (status === "authenticated) {
+      const firstSquadId = squads?.[0]?.id;
+      if (lastVisitedSquadId) {
+        router.push(`/squads/${lastVisitedSquadId}/feed`);
+      } else if (firstSquadId) {
+        setLastVisitedSquadId(firstSquadId);
+        router.push(`/squads/${firstSquadId}/feed`);
+      }
     }
   }, [lastVisitedSquadId, squads]);
 
@@ -58,7 +60,7 @@ export default function HomePage() {
       ) : error ? (
         <Prism language="json">{JSON.stringify(error.message)}</Prism>
       ) : (
-        <p>Do you have any NFTs? You'll need at least one to use FlashSquad!</p>
+        <UserAuthSection/>
       )}
     </>
   );
