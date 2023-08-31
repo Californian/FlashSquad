@@ -2,13 +2,14 @@ import { getCsrfToken, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
+import { Container, Loader, Text, Paper } from "@mantine/core";
 import { Prism } from "@mantine/prism";
 import { useLocalStorage } from "@mantine/hooks";
 
 import { UserAuthSection } from "@/components";
 
 const GetUserSquadsQuery = gql`
-  query GetUserSquads($userId: uuid!) {
+  query GetUserSquads($userId: Uuid) {
     squads(
       where: {
         userSquadRelationships: {
@@ -53,18 +54,24 @@ export default function HomePage() {
     }
   }, [lastVisitedSquadId, squads]);
 
-  if (isLoading) return;
-
   return (
-    <>
+    <Container size="xs" p="sm" h="100%">
+      <Paper shadow="md" radius="lg" p="lg">
       {isLoading ? (
-        <p>Loading...</p>
+        <Loader variant="dots" />
       ) : error ? (
-        <Prism language="json">{JSON.stringify(error.message)}</Prism>
+        <>
+          <UserAuthSection/>
+          <Prism language="json">{JSON.stringify(error.message)}</Prism>
+	</>
       ) : (
-        <UserAuthSection/>
+        <>
+          <UserAuthSection/>
+  	  <Text>You'll need an NFT to get started!</Text>
+  	</>
       )}
-    </>
+      </Paper>
+    </Container>
   );
 }
 

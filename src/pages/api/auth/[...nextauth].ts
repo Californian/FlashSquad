@@ -34,7 +34,7 @@ const CreateOrUpdateUserMutation = gql`
         profileImage: $profileImage
       }
       onConflict: {
-        constraint: users_external_id_key
+        constraint: usersExternalIdKey
         updateColumns: [externalId]
       }
     ) {
@@ -51,7 +51,7 @@ const CreateOrUpdateSquadsMutation = gql`
     insertSquads(
       objects: $squadObjects
       onConflict: {
-        constraint: squads_contract_address_token_id_key
+        constraint: squadsContractAddressTokenIdKey
         updateColumns: updatedAt
       }
     ) {
@@ -203,8 +203,6 @@ export default async function auth(req: any, res: any) {
           link: from([authMiddleware, httpLink]),
           cache: new InMemoryCache(),
         });
-
-        console.log(ensAvatarUrl);
 
         const { data: userData } = await graphqlClient.mutate({
           mutation: CreateOrUpdateUserMutation,
