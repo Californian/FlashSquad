@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import {
@@ -79,9 +79,22 @@ const FeedPage = () => {
     query: { squadId },
   } = useRouter();
 
-  const { data: { posts } = {} } = useQuery(GetSquadPostsQuery, {
+  const { data: { posts = [] } = {} } = useQuery(GetSquadPostsQuery, {
     variables: { squadId },
   });
+
+  const [displayedPosts, setDisplayedPosts] = useState(posts);
+
+  useEffect(() => {
+    console.log("p", posts);
+    if (posts !== null) {
+      setDisplayedPosts(posts);
+    } else {
+      setDisplayedPosts([]);
+    }
+  }, [posts])
+
+  console.log("dp", displayedPosts);
 
   const theme = useMantineTheme();
   const screenIsThinMediaQuery = theme.fn
@@ -91,8 +104,8 @@ const FeedPage = () => {
 
   return (
     <FlashSquadAppShell>
-      {posts?.length > 0 ? (
-        posts?.map(
+      {displayedPosts !== null && displayedPosts?.length > 0 ? (<>
+        {(displayedPosts || []).map(
           (
             {
               id = "",
@@ -106,14 +119,10 @@ const FeedPage = () => {
                     description = "",
                   } = {},
                 } = {},
-              ] = [],
+              ] = [{}],
               author: {
                 displayName = "",
                 externalId = "",
-                profileImage: {
-                  url: authorProfileImageUrl = "",
-                  altText: authorProfileImageAltText = "",
-                } = {},
                 postsAggregate: { aggregate: { count: numPosts = 0 } = {} } = {},
               } = {},
               comments = "",
@@ -130,7 +139,7 @@ const FeedPage = () => {
                 <Group position="apart" mt="sm">
                   <Group position="center" mb="xs" sx={{ height: "100%" }}>
                     <ActionIcon variant="light" color="blue" radius="md">
-                      <Avatar src={authorProfileImageUrl} radius="xl">
+                      <Avatar src={""} radius="xl">
                         <FontAwesomeIcon icon={faUser} />
                       </Avatar>
                     </ActionIcon>
@@ -261,7 +270,8 @@ const FeedPage = () => {
               )}
             </div>
           ),
-        )
+        )}
+	</>
       ) : (
         <Title order={2} weight={400}>
           This squad has no posts; click the + button to create one!

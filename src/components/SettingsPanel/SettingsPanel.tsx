@@ -43,7 +43,7 @@ interface SettingsPanelProps {
 const PHI = (1 + Math.sqrt(5)) / 2;
 
 const GetCurrentUserQuery = gql`
-  query GetCurrentUser($userId: Uuid) {
+  query GetCurrentUser($userId: Uuid!) {
     usersByPk(id: $userId) {
       id
       externalId
