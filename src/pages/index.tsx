@@ -5,6 +5,8 @@ import { useQuery, gql } from "@apollo/client";
 import { Prism } from "@mantine/prism";
 import { useLocalStorage } from "@mantine/hooks";
 
+import { UserAuthSection } from "@/components";
+
 const GetUserSquadsQuery = gql`
   query GetUserSquads($userId: uuid!) {
     squads(
@@ -40,7 +42,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated) {
+    if (status === "authenticated") {
       const firstSquadId = squads?.[0]?.id;
       if (lastVisitedSquadId) {
         router.push(`/squads/${lastVisitedSquadId}/feed`);
