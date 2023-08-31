@@ -68,7 +68,7 @@ const SquadList: React.FC<SquadListProps> = ({ screenIsThin }) => {
       chevronPosition="right"
       variant="filled"
       transitionDuration={100}
-      defaultValue={squadId}
+      defaultValue={squadId as string | null | undefined}
     >
       {squads?.map(
         ({

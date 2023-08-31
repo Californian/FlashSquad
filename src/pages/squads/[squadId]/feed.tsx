@@ -90,38 +90,38 @@ const FeedPage = () => {
   const screenIsThin = useMediaQuery(screenIsThinMediaQuery);
 
   return (
-    <FlashSquadAppShell squadId={squadId}>
+    <FlashSquadAppShell>
       {posts?.length > 0 ? (
         posts?.map(
           (
             {
-              id,
-              body,
+              id = "",
+              body = "",
               postImageRelationships: [
                 {
                   image: {
-                    id: imageId,
-                    url: postImageUrl,
-                    altText: postImageAltText,
-                    description,
+                    id: imageId = "",
+                    url: postImageUrl = "",
+                    altText: postImageAltText = "",
+                    description = "",
                   } = {},
                 } = {},
               ] = [],
               author: {
-                displayName,
-                externalId,
+                displayName = "",
+                externalId = "",
                 profileImage: {
-                  url: authorProfileImageUrl,
-                  altText: authorProfileImageAltText,
+                  url: authorProfileImageUrl = "",
+                  altText: authorProfileImageAltText = "",
                 } = {},
-                postsAggregate: { aggregate: { count: numPosts } = {} } = {},
+                postsAggregate: { aggregate: { count: numPosts = 0 } = {} } = {},
               } = {},
-              comments,
+              comments = "",
               commentsAggregate: {
-                aggregate: { count: numComments } = {},
+                aggregate: { count: numComments = 0 } = {},
               } = {},
-              createdAt,
-              updatedAt,
+              createdAt = "",
+              updatedAt = "",
             } = {},
             ind: number,
           ) => (

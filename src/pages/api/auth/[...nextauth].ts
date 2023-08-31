@@ -252,15 +252,15 @@ export default async function auth(req: any, res: any) {
             ({
               node: {
                 nft: {
-                  contractAddress,
-                  tokenId,
-                  name: displayName,
-                  description,
+                  contractAddress = "",
+                  tokenId = "",
+                  name: displayName = "",
+                  description = "",
                   metadata: {
-                    image: url,
-                    name: altText,
-                    description: imageDescription,
-                    background_color: brandColor,
+                    image: url = "",
+                    name: altText = "",
+                    description: imageDescription = "",
+                    background_color: brandColor = "",
                   } = {},
                 } = {},
               } = {},

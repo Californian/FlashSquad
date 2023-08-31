@@ -24,26 +24,26 @@ const ColorSchemeToggle = () => {
   const theme = useMantineTheme();
   const gray4 = theme.colors.gray[4];
 
-  const AutomaticLabel = ({ size = "lg", color = gray4 }) => (
+  const AutomaticLabel = ({ size = "lg" as any, color = gray4 }) => (
     <FontAwesomeIcon {...{ size, color }} icon={faMagicWandSparkles} />
   );
-  const ManualLabel = ({ size = "lg", color = gray4 }) => (
+  const ManualLabel = ({ size = "lg" as any, color = gray4 }) => (
     <FontAwesomeIcon {...{ size, color }} icon={faM} />
   );
 
-  const LightModeLabel = ({ size = "lg", color = gray4 }) => (
+  const LightModeLabel = ({ size = "lg" as any, color = gray4 }) => (
     <FontAwesomeIcon {...{ size, color }} icon={faSun} />
   );
 
-  const DarkModeLabel = ({ size = "lg", color = gray4 }) => (
+  const DarkModeLabel = ({ size = "lg" as any, color = gray4 }) => (
     <FontAwesomeIcon {...{ size, color }} icon={faMoon} />
   );
 
-  const FollowsSystemLabel = ({ size = "lg", color = gray4 }) => (
+  const FollowsSystemLabel = ({ size = "lg" as any, color = gray4 }) => (
     <FontAwesomeIcon {...{ size, color }} icon={faComputer} />
   );
 
-  const FollowsSunLabel = ({ size = "lg", color = gray4 }) => (
+  const FollowsSunLabel = ({ size = "lg" as any, color = gray4 }) => (
     <FontAwesomeIcon {...{ size, color }} icon={faSun} />
   );
 
