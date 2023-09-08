@@ -7,7 +7,7 @@ import { useRouter } from "next/router";
 import { gql, useQuery } from "@apollo/client";
 
 const GetCurrentSquadQuery = gql`
-  query GetCurrentSquad($squadId: Uuid) {
+  query GetCurrentSquad($squadId: uuid) {
     squadsByPk(id: $squadId) {
       id
       displayName

@@ -43,7 +43,7 @@ interface SettingsPanelProps {
 const PHI = (1 + Math.sqrt(5)) / 2;
 
 const GetCurrentUserQuery = gql`
-  query GetCurrentUser($userId: Uuid!) {
+  query GetCurrentUser($userId: uuid!) {
     usersByPk(id: $userId) {
       id
       externalId
@@ -86,7 +86,7 @@ const GetCurrentUserQuery = gql`
 `;
 
 const GetCurrentSquadQuery = gql`
-  query GetCurrentSquad($squadId: Uuid) {
+  query GetCurrentSquad($squadId: uuid) {
     squadsByPk(id: $squadId) {
       id
       contractAddress
@@ -169,7 +169,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       data: setProfileImageData,
     },
   ] = useMutation(gql`
-    mutation SetProfileImage($userId: Uuid, $profileImageId: Uuid) {
+    mutation SetProfileImage($userId: uuid, $profileImageId: uuid) {
       updateUsersByPk(
         pkColumns: { id: $userId }
         _set: { profileImageId: $profileImageId }
@@ -231,7 +231,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       data: setSquadImageData,
     },
   ] = useMutation(gql`
-    mutation SetSquadImage($squadId: Uuid, $squadImageId: Uuid) {
+    mutation SetSquadImage($squadId: uuid, $squadImageId: uuid) {
       updateSquadsByPk(
         pkColumns: { id: $squadId }
         _set: { squadImageId: $squadImageId }
@@ -265,7 +265,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       data: updateUserData,
     },
   ] = useMutation(gql`
-    mutation UpdateUser($userId: Uuid, $bio: String!) {
+    mutation UpdateUser($userId: uuid, $bio: String!) {
       updateUsersByPk(pkColumns: { id: $userId }, _set: { bio: $bio }) {
         id
         bio
@@ -314,6 +314,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </Title>
 
               <ImageUploadButton
+                buttonId="squad"
                 url={squadImageUrl || currentSquad?.image?.url}
                 handleSelect={handleSquadImageSelect}
                 borderRadius={theme.radius.lg}
@@ -355,6 +356,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </Title>
               <Group position="center">
                 <ImageUploadButton
+                  buttonId="profile"
                   url={profileImageUrl || currentUser?.profileImage?.url}
                   handleSelect={handleProfileImageSelect}
                   borderRadius="100%"

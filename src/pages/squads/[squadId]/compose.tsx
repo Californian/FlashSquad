@@ -50,8 +50,8 @@ const FeedPage = () => {
   const [createPost, { loading, error, data }] = useMutation(gql`
     mutation CreatePost(
       $body: String!
-      $authorId: Uuid
-      $squadId: Uuid
+      $authorId: uuid
+      $squadId: uuid
       $postImageData: PostImageRelationshipsArrRelInsertInput
     ) {
       insertPostsOne(
@@ -136,6 +136,7 @@ const FeedPage = () => {
 
               <Group position="left" sx={{ height: "100%" }}>
                 <ImageUploadButton
+                  buttonId="compose"
                   url={postImageUrl || ""}
                   handleSelect={handlePostImageSelect}
                   borderRadius="100%"
@@ -155,17 +156,17 @@ const FeedPage = () => {
                       squadId,
                       postImageData: postImageUrl
                         ? {
-                          data: [
-                            {
-                              image: {
-                                data: {
-                                  url: postImageUrl,
-                                  altText: postImageAltText,
+                            data: [
+                              {
+                                image: {
+                                  data: {
+                                    url: postImageUrl,
+                                    altText: postImageAltText,
+                                  },
                                 },
                               },
-                            },
-                          ],
-                        }
+                            ],
+                          }
                         : undefined,
                     },
                   });

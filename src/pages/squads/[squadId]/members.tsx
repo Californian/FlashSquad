@@ -20,7 +20,7 @@ import { FlashSquadAppShell } from "@/components";
 import { useRouter } from "next/router";
 
 const GetSquadMembersQuery = gql`
-  query GetSquadMembers($squadId: Uuid) {
+  query GetSquadMembers($squadId: uuid) {
     squadsByPk(id: $squadId) {
       id
       userSquadRelationships {
@@ -58,7 +58,6 @@ const SquadMembersPage = () => {
     useQuery(GetSquadMembersQuery, {
       variables: { squadId },
     });
-
 
   return (
     <FlashSquadAppShell pageTitle="Members">

@@ -34,7 +34,7 @@ const CreateOrUpdateUserMutation = gql`
         profileImage: $profileImage
       }
       onConflict: {
-        constraint: usersExternalIdKey
+        constraint: users_external_id_key
         updateColumns: [externalId]
       }
     ) {
@@ -51,7 +51,7 @@ const CreateOrUpdateSquadsMutation = gql`
     insertSquads(
       objects: $squadObjects
       onConflict: {
-        constraint: squadsContractAddressTokenIdKey
+        constraint: squads_contract_address_token_id_key
         updateColumns: updatedAt
       }
     ) {
@@ -190,14 +190,14 @@ export default async function auth(req: any, res: any) {
     callbacks: {
       async session({ session, token }: { session: any; token: any }) {
         const { sub } = token;
-	console.log("sub", sub);
+        console.log("sub", sub);
         const provider = new EtherscanProvider(
           undefined,
           process.env.ETHERSCAN_API_KEY,
         );
 
         const ensName = await provider.lookupAddress(sub);
-	console.log("ensName", ensName);
+        console.log("ensName", ensName);
         const ensAvatarUrl = await provider.getAvatar(ensName ?? sub);
         // TODO: Get other metadata associated with address.
         //const ensResolver = await provider.getResolver(ensName);
@@ -239,7 +239,7 @@ export default async function auth(req: any, res: any) {
           },
         });
 
-	console.log("userData", JSON.stringify(userData, undefined, 2));
+        console.log("userData", JSON.stringify(userData, undefined, 2));
 
         const {
           insertUsersOne: { id: userId },
@@ -262,59 +262,61 @@ export default async function auth(req: any, res: any) {
         );
         session.token = encodedToken;
 
-	console.log("encodedToken", JSON.stringify(encodedToken, undefined, 2));
+        console.log("encodedToken", JSON.stringify(encodedToken, undefined, 2));
 
         const { data: nftsData } = await graphqlClient.query({
           query: GetNFTsByWalletAddressQuery,
           variables: { address: sub },
         });
 
-	console.log("nftsData", JSON.stringify(nftsData, undefined, 2));
+        console.log("nftsData", JSON.stringify(nftsData, undefined, 2));
 
-	const nftEdges = [...nftsData?.ethereum?.walletByAddress?.walletNFTs?.edges, ...nftsData?.polygon?.walletByAddress?.walletNFTs?.edges]
-        const squadObjects =
-          nftEdges?.map(
-            ({
-              node: {
-                nft: {
-                  contractAddress = "",
-                  tokenId = "",
-                  name: displayName = "",
-                  description = "",
-                  metadata: {
-                    image: url = "",
-                    name: altText = "",
-                    description: imageDescription = "",
-                    background_color: brandColor = "",
-                  } = {},
+        const nftEdges = [
+          ...nftsData?.ethereum?.walletByAddress?.walletNFTs?.edges,
+          ...nftsData?.polygon?.walletByAddress?.walletNFTs?.edges,
+        ];
+        const squadObjects = nftEdges?.map(
+          ({
+            node: {
+              nft: {
+                contractAddress = "",
+                tokenId = "",
+                name: displayName = "",
+                description = "",
+                metadata: {
+                  image: url = "",
+                  name: altText = "",
+                  description: imageDescription = "",
+                  background_color: brandColor = "",
                 } = {},
               } = {},
-            } = {}) => ({
-              contractAddress,
-              tokenId: tokenId.toString(),
-              displayName: displayName || contractAddress || "",
-              description,
-              brandColor,
-              image: !!url
-                ? {
-                    data: {
-                      url,
-                      altText,
-                      description: imageDescription,
-                    },
-                  }
-                : undefined,
-              userSquadRelationships: {
-                data: { isAdmin: true, userId },
-                onConflict: {
-                  constraint: "userSquadRelationshipsPkey",
-                  updateColumns: ["updatedAt"],
-                },
+            } = {},
+          } = {}) => ({
+            contractAddress,
+            tokenId: tokenId.toString(),
+            displayName: displayName || contractAddress || "",
+            description,
+            brandColor,
+            image: !!url
+              ? {
+                  data: {
+                    url,
+                    altText,
+                    description: imageDescription,
+                  },
+                }
+              : undefined,
+            userSquadRelationships: {
+              data: { isAdmin: true, userId },
+              onConflict: {
+                constraint: "user_squad_relationships_pkey",
+                updateColumns: ["updatedAt"],
               },
-            }),
-          );
+            },
+          }),
+        );
 
-	console.log("squadObjects", JSON.stringify(squadObjects, undefined, 2));
+        console.log("squadObjects", JSON.stringify(squadObjects, undefined, 2));
 
         const { data: squadsData } = await graphqlClient.mutate({
           mutation: CreateOrUpdateSquadsMutation,
@@ -323,7 +325,7 @@ export default async function auth(req: any, res: any) {
           },
         });
 
-	console.log("squadsData", JSON.stringify(squadsData, undefined, 2));
+        console.log("squadsData", JSON.stringify(squadsData, undefined, 2));
 
         return session;
       },

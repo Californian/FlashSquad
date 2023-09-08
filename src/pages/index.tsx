@@ -9,7 +9,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import { UserAuthSection } from "@/components";
 
 const GetUserSquadsQuery = gql`
-  query GetUserSquads($userId: Uuid) {
+  query GetUserSquads($userId: uuid) {
     squads(
       where: {
         userSquadRelationships: {
@@ -40,7 +40,6 @@ export default function HomePage() {
     skip: !currentUser?.id || !!lastVisitedSquadId,
   });
 
-
   const router = useRouter();
 
   useEffect(() => {
@@ -58,19 +57,19 @@ export default function HomePage() {
   return (
     <Container size="xs" p="sm" h="100%">
       <Paper shadow="md" radius="lg" p="lg">
-      {isLoading ? (
-        <Loader variant="dots" />
-      ) : error ? (
-        <>
-          <UserAuthSection/>
-          <Prism language="json">{JSON.stringify(error.message)}</Prism>
-	</>
-      ) : (
-        <>
-          <UserAuthSection/>
-  	  <Text>You'll need an NFT to get started!</Text>
-  	</>
-      )}
+        {isLoading ? (
+          <Loader variant="dots" />
+        ) : error ? (
+          <>
+            <UserAuthSection />
+            <Prism language="json">{JSON.stringify(error.message)}</Prism>
+          </>
+        ) : (
+          <>
+            <UserAuthSection />
+            <Text>You'll need an NFT to get started!</Text>
+          </>
+        )}
       </Paper>
     </Container>
   );
