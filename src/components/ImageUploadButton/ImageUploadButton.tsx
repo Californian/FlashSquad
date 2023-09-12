@@ -6,9 +6,6 @@ import { useId } from "@mantine/hooks";
 import Uppy from "@uppy/core";
 import Dashboard from "@uppy/dashboard";
 import ImageEditor from "@uppy/image-editor";
-import Webcam from "@uppy/webcam";
-import ScreenCapture from "@uppy/screen-capture";
-import Audio from "@uppy/audio";
 import Compressor from "@uppy/compressor";
 import Transloadit from "@uppy/transloadit";
 
@@ -45,6 +42,10 @@ const ImageUploadButton: React.FC<ImageUploadButtonProps> = ({
   const [uppy, setUppy] = useState<Uppy | undefined>();
 
   useEffect(() => {
+    if (uppy) {
+      uppy.close({ reason: "unmount" });
+    }
+
     const newUppy = new Uppy({
       restrictions: { allowedFileTypes: ["image/*"], maxNumberOfFiles: 1 },
     })
@@ -52,11 +53,9 @@ const ImageUploadButton: React.FC<ImageUploadButtonProps> = ({
         trigger: `#${uploaderModalTriggerId}`,
         closeModalOnClickOutside: true,
         theme: colorSchemeIsLight ? "light" : "dark",
+        proudlyDisplayPoweredByUppy: false,
       })
       .use(ImageEditor, { target: Dashboard })
-      .use(Webcam, { target: Dashboard, showVideoSourceDropdown: true })
-      .use(ScreenCapture, { target: Dashboard })
-      .use(Audio, { target: Dashboard })
       .use(Compressor)
       .use(Transloadit, {
         assemblyOptions: {
@@ -65,19 +64,17 @@ const ImageUploadButton: React.FC<ImageUploadButtonProps> = ({
             template_id: process.env.NEXT_PUBLIC_TRANSLOADIT_TEMPLATE_ID,
           },
         },
+        waitForEncoding: true,
       });
+
+    newUppy.on("transloadit:complete", ({ results }) => {
+      const uploadUrl = results?.compress_image[0]?.ssl_url;
+      const uploadName = results?.compress_image[0]?.original_name;
+      handleSelect(uploadUrl, uploadName);
+    });
 
     setUppy(newUppy);
-  }, [uploaderModalTriggerId]);
-
-  useEffect(() => {
-    if (uppy) {
-      uppy.on("transloadit:complete", ({ results }) => {
-        console.log(results);
-        //handleSelect(uploadUrl, uploadName);
-      });
-    }
-  }, [uppy]);
+  }, [uploaderModalTriggerId, colorSchemeIsLight]);
 
   return (
     <>

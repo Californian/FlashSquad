@@ -2,7 +2,6 @@ import NextAuth, { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getCsrfToken } from "next-auth/react";
 import { SiweMessage } from "siwe";
-import { EtherscanProvider } from "ethers";
 import jsonwebtoken from "jsonwebtoken";
 import { Secret } from "next-auth/jwt";
 import {
@@ -52,7 +51,7 @@ const CreateOrUpdateSquadsMutation = gql`
       objects: $squadObjects
       onConflict: {
         constraint: squads_contract_address_token_id_key
-        updateColumns: updatedAt
+        updateColumns: [updatedAt]
       }
     ) {
       returning {
@@ -190,20 +189,8 @@ export default async function auth(req: any, res: any) {
     callbacks: {
       async session({ session, token }: { session: any; token: any }) {
         const { sub } = token;
-        console.log("sub", sub);
-        const provider = new EtherscanProvider(
-          undefined,
-          process.env.ETHERSCAN_API_KEY,
-        );
 
-        const ensName = await provider.lookupAddress(sub);
-        console.log("ensName", ensName);
-        const ensAvatarUrl = await provider.getAvatar(ensName ?? sub);
-        // TODO: Get other metadata associated with address.
-        //const ensResolver = await provider.getResolver(ensName);
         session.user.walletAddress = sub;
-        session.user.name = ensName;
-        session.user.imageSource = ensAvatarUrl;
 
         const httpLink = new HttpLink({
           uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
@@ -224,6 +211,22 @@ export default async function auth(req: any, res: any) {
           cache: new InMemoryCache(),
         });
 
+        const { data: nftsData } = await graphqlClient.query({
+          query: GetNFTsByWalletAddressQuery,
+          variables: { address: sub },
+        });
+
+        const ensName = nftsData?.ethereum?.walletByAddress?.ensName;
+        session.user.name = ensName;
+
+        // TODO Rearrange associations to get per-squad user personas.
+        const ensAvatarUrl = "";
+
+        const nftEdges = [
+          ...nftsData?.ethereum?.walletByAddress?.walletNFTs?.edges,
+          ...nftsData?.polygon?.walletByAddress?.walletNFTs?.edges,
+        ];
+
         const { data: userData } = await graphqlClient.mutate({
           mutation: CreateOrUpdateUserMutation,
           variables: {
@@ -238,8 +241,6 @@ export default async function auth(req: any, res: any) {
               : undefined,
           },
         });
-
-        console.log("userData", JSON.stringify(userData, undefined, 2));
 
         const {
           insertUsersOne: { id: userId },
@@ -262,19 +263,6 @@ export default async function auth(req: any, res: any) {
         );
         session.token = encodedToken;
 
-        console.log("encodedToken", JSON.stringify(encodedToken, undefined, 2));
-
-        const { data: nftsData } = await graphqlClient.query({
-          query: GetNFTsByWalletAddressQuery,
-          variables: { address: sub },
-        });
-
-        console.log("nftsData", JSON.stringify(nftsData, undefined, 2));
-
-        const nftEdges = [
-          ...nftsData?.ethereum?.walletByAddress?.walletNFTs?.edges,
-          ...nftsData?.polygon?.walletByAddress?.walletNFTs?.edges,
-        ];
         const squadObjects = nftEdges?.map(
           ({
             node: {
@@ -300,7 +288,7 @@ export default async function auth(req: any, res: any) {
             image: !!url
               ? {
                   data: {
-                    url,
+                    url: url.replace(/^ipfs:\/\//i, "https://ipfs.io/ipfs/"),
                     altText,
                     description: imageDescription,
                   },
@@ -316,16 +304,12 @@ export default async function auth(req: any, res: any) {
           }),
         );
 
-        console.log("squadObjects", JSON.stringify(squadObjects, undefined, 2));
-
-        const { data: squadsData } = await graphqlClient.mutate({
+        await graphqlClient.mutate({
           mutation: CreateOrUpdateSquadsMutation,
           variables: {
             squadObjects,
           },
         });
-
-        console.log("squadsData", JSON.stringify(squadsData, undefined, 2));
 
         return session;
       },

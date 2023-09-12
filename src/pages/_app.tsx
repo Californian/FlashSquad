@@ -8,7 +8,7 @@ import type { AppProps } from "next/app";
 // import { getCookie, setCookie } from "cookies-next";
 import { getCookie } from "cookies-next";
 import Head from "next/head";
-import { MantineProvider } from "@mantine/core";
+import { MantineProvider, TypographyStylesProvider } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { Notifications } from "@mantine/notifications";
 import { ColorSchemeSwitcherProvider } from "color-scheme-switcher";
@@ -19,7 +19,7 @@ import { mainnet, polygon, optimism } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { InjectedConnector } from "wagmi/connectors/injected";
 
-import { ApolloProviderWrapper } from "@/components";
+import { ApolloProviderWrapper, AuthChecker } from "@/components";
 import { useRouter } from "next/router";
 
 export const { chains, publicClient } = configureChains(
@@ -114,6 +114,7 @@ const App = ({
                 "#EBE8FD",
               ],
             },
+            loader: "dots",
             components: {
               ActionIcon: {
                 sizes: {
@@ -142,14 +143,18 @@ const App = ({
           withGlobalStyles
           withNormalizeCSS
         >
-          <WagmiConfig config={config}>
-            <SessionProvider session={session}>
-              <ApolloProviderWrapper>
-                <Component {...pageProps} />
-              </ApolloProviderWrapper>
-              <Notifications />
-            </SessionProvider>
-          </WagmiConfig>
+          <TypographyStylesProvider>
+            <WagmiConfig config={config}>
+              <SessionProvider session={session}>
+                <ApolloProviderWrapper>
+                  <AuthChecker>
+                    <Component {...pageProps} />
+                  </AuthChecker>
+                </ApolloProviderWrapper>
+                <Notifications />
+              </SessionProvider>
+            </WagmiConfig>
+          </TypographyStylesProvider>
         </MantineProvider>
       </ColorSchemeSwitcherProvider>
     </>

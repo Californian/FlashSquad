@@ -22,7 +22,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 
 import {
   UserAuthSection,
@@ -41,6 +41,31 @@ interface SettingsPanelProps {
 }
 
 const PHI = (1 + Math.sqrt(5)) / 2;
+
+const CreateImageMutation = gql`
+  mutation CreateImage($url: String!, $altText: String!) {
+    insertImagesOne(object: { url: $url, altText: $altText }) {
+      id
+      url
+      altText
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const SetProfileImageMutation = gql`
+  mutation SetProfileImage($userId: uuid!, $profileImageId: uuid!) {
+    updateUsersByPk(
+      pkColumns: { id: $userId }
+      _set: { profileImageId: $profileImageId }
+    ) {
+      id
+      createdAt
+      updatedAt
+    }
+  }
+`;
 
 const GetCurrentUserQuery = gql`
   query GetCurrentUser($userId: uuid!) {
@@ -86,7 +111,7 @@ const GetCurrentUserQuery = gql`
 `;
 
 const GetCurrentSquadQuery = gql`
-  query GetCurrentSquad($squadId: uuid) {
+  query GetCurrentSquad($squadId: uuid!) {
     squadsByPk(id: $squadId) {
       id
       contractAddress
@@ -107,19 +132,40 @@ const GetCurrentSquadQuery = gql`
   }
 `;
 
+const SetSquadImageMutation = gql`
+  mutation SetSquadImage($squadId: uuid!, $squadImageId: uuid!) {
+    updateSquadsByPk(
+      pkColumns: { id: $squadId }
+      _set: { squadImageId: $squadImageId }
+    ) {
+      id
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const UpdateUserBioMutation = gql`
+  mutation UpdateUserBio($userId: uuid!, $bio: String!) {
+    updateUsersByPk(pkColumns: { id: $userId }, _set: { bio: $bio }) {
+      id
+      bio
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settingsPanelIsOpen,
   screenIsThin,
 }) => {
   const { data: sessionData } = useSession();
-  const { user: sessionUser } = sessionData ?? {};
+  const { user: { id: userId = "" } = {} } = sessionData ?? {};
 
   const {
     query: { squadId },
   } = useRouter();
-
-  const [profileImageUrl, setProfileImageUrl] = useState("");
-  const [squadImageUrl, setSquadImageUrl] = useState("");
 
   const [userBioIsInEditMode, setUserBioIsInEditMode] = useState(false);
   const theme = useMantineTheme();
@@ -132,34 +178,24 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     data: { usersByPk: currentUser } = {},
     refetch: currentUserRefetch,
   } = useQuery(GetCurrentUserQuery, {
-    variables: { userId: sessionUser?.id },
-    skip: !sessionUser?.id,
+    variables: { userId },
+    skip: !userId,
   });
 
   useEffect(() => {
-    if (sessionUser?.id) {
-      currentUserRefetch({ userId: sessionUser?.id });
+    if (userId) {
+      currentUserRefetch({ userId });
     }
-  }, [sessionUser?.id]);
+  }, [userId]);
 
   const [
-    createProfileImage,
+    createImage,
     {
-      loading: createProfileImageIsLoading,
-      error: createProfileImageError,
-      data: createProfileImageData,
+      loading: createImageIsLoading,
+      error: createImageError,
+      data: createImageData,
     },
-  ] = useMutation(gql`
-    mutation CreateImage($url: String!, $altText: String!) {
-      insertImagesOne(object: { url: $url, altText: $altText }) {
-        id
-        url
-        altText
-        createdAt
-        updatedAt
-      }
-    }
-  `);
+  ] = useMutation(CreateImageMutation);
 
   const [
     setProfileImage,
@@ -168,60 +204,32 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       error: setProfileImageError,
       data: setProfileImageData,
     },
-  ] = useMutation(gql`
-    mutation SetProfileImage($userId: uuid, $profileImageId: uuid) {
-      updateUsersByPk(
-        pkColumns: { id: $userId }
-        _set: { profileImageId: $profileImageId }
-      ) {
-        id
-        createdAt
-        updatedAt
-      }
-    }
-  `);
+  ] = useMutation(SetProfileImageMutation);
 
-  const handleProfileImageSelect = (url: string, fileName: string) => {
-    setProfileImageUrl(url);
-    createProfileImage({ variables: { url, altText: fileName } });
-  };
-
-  useEffect(() => {
-    const profileImageId = createProfileImageData?.insertImagesOne?.id;
-    if (profileImageId) {
-      setProfileImage({
-        variables: { userId: sessionUser?.id, profileImageId },
+  const handleProfileImageSelect = useCallback(
+    async (url: string, fileName: string) => {
+      const {
+        data: {
+          insertImagesOne: { id: profileImageId },
+        },
+      } = await createImage({
+        variables: { url, altText: fileName },
       });
-    }
-  }, [createProfileImageData]);
+      await setProfileImage({ variables: { userId, profileImageId } });
+      currentUserRefetch();
+    },
+    [userId],
+  );
 
   const {
     loading: currentSquadIsLoading,
     error: currentSquadError,
     data: { squadsByPk: currentSquad } = {},
+    refetch: currentSquadRefetch,
   } = useQuery(GetCurrentSquadQuery, {
     variables: { squadId },
     skip: !squadId,
   });
-
-  const [
-    createSquadImage,
-    {
-      loading: createSquadImageIsLoading,
-      error: createSquadImageError,
-      data: createSquadImageData,
-    },
-  ] = useMutation(gql`
-    mutation CreateImage($url: String!, $altText: String!) {
-      insertImagesOne(object: { url: $url, altText: $altText }) {
-        id
-        url
-        altText
-        createdAt
-        updatedAt
-      }
-    }
-  `);
 
   const [
     setSquadImage,
@@ -230,50 +238,31 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       error: setSquadImageError,
       data: setSquadImageData,
     },
-  ] = useMutation(gql`
-    mutation SetSquadImage($squadId: uuid, $squadImageId: uuid) {
-      updateSquadsByPk(
-        pkColumns: { id: $squadId }
-        _set: { squadImageId: $squadImageId }
-      ) {
-        id
-        createdAt
-        updatedAt
-      }
-    }
-  `);
+  ] = useMutation(SetSquadImageMutation);
 
-  const handleSquadImageSelect = (url: string, fileName: string) => {
-    setSquadImageUrl(url);
-    createSquadImage({ variables: { url, altText: fileName } });
-  };
-
-  useEffect(() => {
-    const squadImageId = createSquadImageData?.insertImagesOne?.id;
-    if (squadImageId) {
-      setSquadImage({
+  const handleSquadImageSelect = useCallback(
+    async (url: string, fileName: string) => {
+      const {
+        data: {
+          insertImagesOne: { id: squadImageId },
+        },
+      } = await createImage({ variables: { url, altText: fileName } });
+      await setSquadImage({
         variables: { squadId, squadImageId },
       });
-    }
-  }, [createSquadImageData]);
+      currentSquadRefetch();
+    },
+    [squadId],
+  );
 
   const [
-    updateUser,
+    updateUserBio,
     {
-      loading: updateUserIsLoading,
-      error: updateUserError,
-      data: updateUserData,
+      loading: updateUserBioIsLoading,
+      error: updateUserBioError,
+      data: updateUserBioData,
     },
-  ] = useMutation(gql`
-    mutation UpdateUser($userId: uuid, $bio: String!) {
-      updateUsersByPk(pkColumns: { id: $userId }, _set: { bio: $bio }) {
-        id
-        bio
-        createdAt
-        updatedAt
-      }
-    }
-  `);
+  ] = useMutation(UpdateUserBioMutation);
 
   const form = useForm({
     initialValues: {
@@ -315,7 +304,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
               <ImageUploadButton
                 buttonId="squad"
-                url={squadImageUrl || currentSquad?.image?.url}
+                url={currentSquad?.image?.url}
                 handleSelect={handleSquadImageSelect}
                 borderRadius={theme.radius.lg}
                 minHeight="100px"
@@ -357,7 +346,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <Group position="center">
                 <ImageUploadButton
                   buttonId="profile"
-                  url={profileImageUrl || currentUser?.profileImage?.url}
+                  url={currentUser?.profileImage?.url}
                   handleSelect={handleProfileImageSelect}
                   borderRadius="100%"
                   minHeight="100px"
@@ -371,9 +360,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   style={{ maxWidth: 300, width: "100%", height: "7rem" }}
                   onSubmit={form.onSubmit((values) => {
                     form.setValues(values);
-                    updateUser({
+                    updateUserBio({
                       variables: {
-                        userId: sessionUser?.id,
+                        userId,
                         bio: form.values.userBio,
                       },
                     });

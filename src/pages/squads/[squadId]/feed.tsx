@@ -15,16 +15,19 @@ import {
   Avatar,
   useMantineTheme,
   Title,
+  Loader,
+  LoadingOverlay,
 } from "@mantine/core";
-import { faUser, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faPlus, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useMutation, useQuery } from "@apollo/client";
 
-import { FlashSquadAppShell } from "@/components";
+import { FlashSquadAppShell, FlashSquadMarkdown } from "@/components";
 import { useMediaQuery } from "@mantine/hooks";
+import { useSession } from "next-auth/react";
 
 const GetSquadPostsQuery = gql`
-  query GetSquadPosts($squadId: uuid, $limit: Int = 20) {
+  query GetSquadPosts($squadId: uuid!, $limit: Int = 20) {
     posts(
       where: { squadId: { _eq: $squadId } }
       orderBy: { updatedAt: DESC }
@@ -74,24 +77,29 @@ const GetSquadPostsQuery = gql`
   }
 `;
 
+const DeletePostMutation = gql`
+  mutation DeletePost($postId: uuid!) {
+    deletePostsByPk(id: $postId) {
+      id
+    }
+  }
+`;
+
 const FeedPage = () => {
   const {
     query: { squadId },
   } = useRouter();
 
-  const { data: { posts = [] } = {} } = useQuery(GetSquadPostsQuery, {
+  const { data: sessionData } = useSession();
+  const { user: sessionUser } = sessionData ?? {};
+
+  const {
+    data: { posts = [] } = {},
+    refetch: refetchPosts,
+    loading: postsAreLoading,
+  } = useQuery(GetSquadPostsQuery, {
     variables: { squadId },
   });
-
-  const [displayedPosts, setDisplayedPosts] = useState(posts);
-
-  useEffect(() => {
-    if (posts !== null) {
-      setDisplayedPosts(posts);
-    } else {
-      setDisplayedPosts([]);
-    }
-  }, [posts]);
 
   const theme = useMantineTheme();
   const screenIsThinMediaQuery = theme.fn
@@ -99,14 +107,33 @@ const FeedPage = () => {
     .replace("@media ", "");
   const screenIsThin = useMediaQuery(screenIsThinMediaQuery);
 
+  const [deletePost, { loading: deletePostsIsLoading, error, data }] =
+    useMutation(DeletePostMutation);
+
+  const [postsPendingDeletion, setPostsPendingDeletion] = useState<
+    Array<string>
+  >([]);
+
+  useEffect(() => {
+    if (!deletePostsIsLoading) {
+      refetchPosts();
+    }
+  }, [deletePostsIsLoading]);
+
+  useEffect(() => {
+    if (!postsAreLoading) {
+      setPostsPendingDeletion([]);
+    }
+  }, [postsAreLoading]);
+
   return (
     <FlashSquadAppShell>
-      {displayedPosts !== null && displayedPosts?.length > 0 ? (
+      {posts !== null && posts?.length > 0 ? (
         <>
-          {displayedPosts?.map(
+          {posts?.map(
             (
               {
-                id = "",
+                id: postId = "",
                 body = "",
                 postImageRelationships: [
                   {
@@ -119,10 +146,15 @@ const FeedPage = () => {
                   } = { image: {} },
                 ] = [{ image: {} }],
                 author: {
+                  id: authorId = "",
                   displayName = "",
                   externalId = "",
                   postsAggregate: {
                     aggregate: { count: numPosts = 0 } = {},
+                  } = {},
+                  profileImage: {
+                    url: authorProfileImageUrl = "",
+                    altText: authorProfileImageAltText = "",
                   } = {},
                 } = {},
                 comments = "",
@@ -134,12 +166,16 @@ const FeedPage = () => {
               } = {},
               ind: number,
             ) => (
-              <div key={id}>
+              <div key={postId}>
                 <>
                   <Group position="apart" mt="sm">
                     <Group position="center" mb="xs" sx={{ height: "100%" }}>
                       <ActionIcon variant="light" color="blue" radius="md">
-                        <Avatar src={""} radius="xl">
+                        <Avatar
+                          src={authorProfileImageUrl}
+                          alt={authorProfileImageAltText}
+                          radius="xl"
+                        >
                           <FontAwesomeIcon icon={faUser} />
                         </Avatar>
                       </ActionIcon>
@@ -170,7 +206,11 @@ const FeedPage = () => {
                   ) : (
                     <></>
                   )}
-                  <Text size="md">{body}</Text>
+                  {postsPendingDeletion.includes(postId) ? (
+                    <LoadingOverlay visible />
+                  ) : (
+                    <FlashSquadMarkdown body={body} />
+                  )}
                   <Group position="apart" mt="sm">
                     <Group position="center" mb="xs" sx={{ height: "100%" }}>
                       <Group
@@ -254,11 +294,26 @@ const FeedPage = () => {
                       </Group>
                     </Group>
 
-                    <Group
-                      position="center"
-                      mb="xs"
-                      sx={{ height: "100%" }}
-                    ></Group>
+                    <Group position="center" mb="xs" sx={{ height: "100%" }}>
+                      {authorId === sessionUser?.id ? (
+                        <ActionIcon
+                          variant="light"
+                          radius="md"
+                          color="red"
+                          onClick={() => {
+                            setPostsPendingDeletion([
+                              ...postsPendingDeletion,
+                              postId,
+                            ]);
+                            deletePost({ variables: { postId } });
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrashCan} />
+                        </ActionIcon>
+                      ) : (
+                        <></>
+                      )}
+                    </Group>
                   </Group>
                 </>
                 {ind !== posts.length - 1 ? (

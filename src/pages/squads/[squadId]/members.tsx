@@ -20,7 +20,7 @@ import { FlashSquadAppShell } from "@/components";
 import { useRouter } from "next/router";
 
 const GetSquadMembersQuery = gql`
-  query GetSquadMembers($squadId: uuid) {
+  query GetSquadMembers($squadId: uuid!) {
     squadsByPk(id: $squadId) {
       id
       userSquadRelationships {

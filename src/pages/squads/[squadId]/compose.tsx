@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ActionIcon,
@@ -9,20 +9,100 @@ import {
   Text,
   Button,
   Modal,
+  Avatar,
+  LoadingOverlay,
+  Container,
 } from "@mantine/core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCamera,
-  faClose,
-  faImage,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
-import { useDisclosure } from "@mantine/hooks";
+import { faClose, faUser } from "@fortawesome/free-solid-svg-icons";
+import { useDebouncedState, useDisclosure } from "@mantine/hooks";
 
-import { FlashSquadAppShell, ImageUploadButton } from "@/components";
-import { gql, useMutation } from "@apollo/client";
+import {
+  FlashSquadAppShell,
+  FlashSquadMarkdown,
+  ImageUploadButton,
+} from "@/components";
+import { gql, useMutation, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+
+const GetCurrentUserQuery = gql`
+  query GetCurrentUser($userId: uuid!) {
+    usersByPk(id: $userId) {
+      id
+      externalId
+      displayName
+      bio
+      profileImage {
+        id
+        url
+        altText
+        createdAt
+        updatedAt
+      }
+      createdAt
+      updatedAt
+      userSquadRelationships {
+        userId
+        squadId
+        isAdmin
+        createdAt
+        updatedAt
+        squad {
+          id
+          displayName
+          description
+          brandColor
+          typeface
+          image {
+            id
+            url
+            altText
+            description
+            createdAt
+            updatedAt
+          }
+          createdAt
+          updatedAt
+        }
+      }
+    }
+  }
+`;
+
+const CreatePostMutation = gql`
+  mutation CreatePost(
+    $body: String!
+    $authorId: uuid!
+    $squadId: uuid!
+    $postImageData: PostImageRelationshipsArrRelInsertInput
+  ) {
+    insertPostsOne(
+      object: {
+        body: $body
+        authorId: $authorId
+        squadId: $squadId
+        postImageRelationships: $postImageData
+      }
+    ) {
+      id
+      body
+      authorId
+      createdAt
+      updatedAt
+      postImageRelationships {
+        image {
+          id
+          url
+          description
+          altText
+          createdAt
+          updatedAt
+        }
+      }
+    }
+  }
+`;
 
 const FeedPage = () => {
   const router = useRouter();
@@ -30,12 +110,22 @@ const FeedPage = () => {
     query: { squadId },
   } = router;
 
-  const [content, setContent] = useState("");
+  const [content, setContent] = useDebouncedState("", 200);
 
   const [opened, { open, close }] = useDisclosure(false);
 
   const { data: sessionData } = useSession();
   const { user: sessionUser } = sessionData ?? {};
+
+  const {
+    loading: currentUserIsLoading,
+    error: currentUserError,
+    data: { usersByPk: currentUser } = {},
+    refetch: currentUserRefetch,
+  } = useQuery(GetCurrentUserQuery, {
+    variables: { userId: sessionUser?.id },
+    skip: !sessionUser?.id,
+  });
 
   const [postImageUrl, setPostImageUrl] = useState<string | undefined>();
   const [postImageAltText, setPostImageAltText] = useState<
@@ -47,53 +137,29 @@ const FeedPage = () => {
     setPostImageAltText(fileName);
   }, []);
 
-  const [createPost, { loading, error, data }] = useMutation(gql`
-    mutation CreatePost(
-      $body: String!
-      $authorId: uuid
-      $squadId: uuid
-      $postImageData: PostImageRelationshipsArrRelInsertInput
-    ) {
-      insertPostsOne(
-        object: {
-          body: $body
-          authorId: $authorId
-          squadId: $squadId
-          postImageRelationships: $postImageData
-        }
-      ) {
-        id
-        body
-        authorId
-        createdAt
-        updatedAt
-        postImageRelationships {
-          image {
-            id
-            url
-            description
-            altText
-            createdAt
-            updatedAt
-          }
-        }
-      }
-    }
-  `);
+  const [
+    createPost,
+    { loading: createPostIsLoading, error, data: createPostData },
+  ] = useMutation(CreatePostMutation);
 
-  if (loading) return;
+  useEffect(() => {
+    if (!createPostIsLoading && createPostData) {
+      router.push(`/squads/${squadId}/feed`);
+    }
+  }, [createPostIsLoading]);
 
   return (
     <FlashSquadAppShell>
+      <LoadingOverlay visible={createPostIsLoading} />
       <Stack justify="space-between" h="100%">
         <Stack justify="flex-start" h="100%">
           <Group position="apart">
             <Group position="left">
-              <ActionIcon variant="light" color="blue" radius="md">
+              <Avatar src={currentUser?.profileImage?.url} radius="xl">
                 <FontAwesomeIcon icon={faUser} />
-              </ActionIcon>
+              </Avatar>
               <Center>
-                <Text>Mind</Text>
+                <Text>{currentUser?.displayName}</Text>
               </Center>
             </Group>
             <Group position="right">
@@ -112,10 +178,16 @@ const FeedPage = () => {
               root: { height: "100%" },
               wrapper: { height: "100%" },
             }}
-            value={content}
             placeholder="Start typing..."
             onChange={({ target: { value } }) => setContent(value)}
           />
+
+          <Container
+            fluid
+            sx={{ height: "100%", textAlign: "left", margin: 0 }}
+          >
+            <FlashSquadMarkdown body={content} />
+          </Container>
         </Stack>
 
         <Stack justify="flex-end">
@@ -170,7 +242,6 @@ const FeedPage = () => {
                         : undefined,
                     },
                   });
-                  router.push(`/squads/${squadId}/feed`);
                 }}
               >
                 Post

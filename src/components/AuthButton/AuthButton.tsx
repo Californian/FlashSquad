@@ -8,14 +8,12 @@ import {
   useDisconnect,
 } from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
-import { MouseEvent, useEffect } from "react";
-import { Button } from "@mantine/core";
-import Link from "next/link";
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { Button, LoadingOverlay } from "@mantine/core";
 
-interface AuthButtonProps { }
+interface AuthButtonProps {}
 
-const AuthButton: React.FC<AuthButtonProps> = ({ }) => {
+const AuthButton: React.FC<AuthButtonProps> = ({}) => {
   const { signMessageAsync } = useSignMessage();
   const { chain } = useNetwork();
   const { address, isConnected } = useAccount();
@@ -24,12 +22,12 @@ const AuthButton: React.FC<AuthButtonProps> = ({ }) => {
   });
   const { disconnect } = useDisconnect();
   const { data: session, status } = useSession();
-  const isLoading = status === "loading";
-  const router = useRouter();
+  const sessionIsLoading = status === "loading";
+  const [loginIsLoading, setLoginIsLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
-      const callbackUrl = "/protected";
+      const callbackUrl = "/";
       const message = new SiweMessage({
         domain: window.location.host,
         address: address,
@@ -42,12 +40,13 @@ const AuthButton: React.FC<AuthButtonProps> = ({ }) => {
       const signature = await signMessageAsync({
         message: message.prepareMessage(),
       });
-      signIn("credentials", {
+      await signIn("credentials", {
         message: JSON.stringify(message),
         redirect: false,
         signature,
         callbackUrl,
       });
+      setLoginIsLoading(false);
     } catch (error) {
       window.alert(error);
     }
@@ -60,25 +59,29 @@ const AuthButton: React.FC<AuthButtonProps> = ({ }) => {
   }, [isConnected]);
 
   return (
-    <Button
-      disabled={isLoading}
-      onClick={() => {
-        if (!isLoading) {
-          if (session?.user) {
-            disconnect();
-            signOut();
-          } else {
-            if (!isConnected) {
-              connect();
+    <>
+      <LoadingOverlay visible={loginIsLoading} />
+      <Button
+        disabled={sessionIsLoading}
+        onClick={() => {
+          if (!sessionIsLoading) {
+            if (session?.user) {
+              disconnect();
+              signOut();
             } else {
-              handleLogin();
+              if (!isConnected) {
+                setLoginIsLoading(true);
+                connect();
+              } else {
+                handleLogin();
+              }
             }
           }
-        }
-      }}
-    >
-      {typeof session?.user === "undefined" ? "Sign In" : "Sign Out"}
-    </Button>
+        }}
+      >
+        {typeof session?.user === "undefined" ? "Sign In" : "Sign Out"}
+      </Button>
+    </>
   );
 };
 

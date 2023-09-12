@@ -2,14 +2,24 @@ import { getCsrfToken, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
-import { Container, Loader, Text, Paper } from "@mantine/core";
+import {
+  Container,
+  Loader,
+  Text,
+  Paper,
+  LoadingOverlay,
+  Title,
+  Group,
+  Stack,
+  Center,
+} from "@mantine/core";
 import { Prism } from "@mantine/prism";
 import { useLocalStorage } from "@mantine/hooks";
 
-import { UserAuthSection } from "@/components";
+import { AuthButton, UserAuthSection } from "@/components";
 
 const GetUserSquadsQuery = gql`
-  query GetUserSquads($userId: uuid) {
+  query GetUserSquads($userId: uuid!) {
     squads(
       where: {
         userSquadRelationships: {
@@ -28,7 +38,7 @@ export default function HomePage() {
     key: "last-visited-squad",
   });
 
-  const { data: sessionData, status } = useSession();
+  const { data: sessionData, status: sessionStatus } = useSession();
   const { user: currentUser } = sessionData ?? {};
 
   const {
@@ -43,7 +53,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated") {
+    if (sessionStatus === "authenticated") {
       const firstSquadId = squads?.[0]?.id;
       if (lastVisitedSquadId) {
         router.push(`/squads/${lastVisitedSquadId}/feed`);
@@ -52,25 +62,31 @@ export default function HomePage() {
         router.push(`/squads/${firstSquadId}/feed`);
       }
     }
-  }, [lastVisitedSquadId, squads]);
+  }, [lastVisitedSquadId, squads, sessionStatus]);
 
   return (
-    <Container size="xs" p="sm" h="100%">
-      <Paper shadow="md" radius="lg" p="lg">
-        {isLoading ? (
-          <Loader variant="dots" />
-        ) : error ? (
-          <>
-            <UserAuthSection />
-            <Prism language="json">{JSON.stringify(error.message)}</Prism>
-          </>
-        ) : (
-          <>
-            <UserAuthSection />
-            <Text>You'll need an NFT to get started!</Text>
-          </>
-        )}
-      </Paper>
+    <Container size="xs" p="sm" h="100vh">
+      <Center>
+        <Paper shadow="xl" radius="lg" p="lg">
+          <Stack>
+            <Title fw={350}>Welcome to FlashSquad</Title>
+            <LoadingOverlay visible={isLoading} />
+            {error ? (
+              <>
+                <UserAuthSection />
+                <Prism language="json">{JSON.stringify(error.message)}</Prism>
+              </>
+            ) : (
+              <Group position="center">
+                <AuthButton />
+                {sessionStatus === "authenticated" && !isLoading && (
+                  <Text>You'll need an NFT to get started!</Text>
+                )}
+              </Group>
+            )}
+          </Stack>
+        </Paper>
+      </Center>
     </Container>
   );
 }
