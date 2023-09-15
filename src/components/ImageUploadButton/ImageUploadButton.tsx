@@ -1,4 +1,4 @@
-import { useEffect, useInsertionEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { faFileUpload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ActionIcon, BackgroundImage, Box } from "@mantine/core";
@@ -6,7 +6,6 @@ import { useId } from "@mantine/hooks";
 import Uppy from "@uppy/core";
 import Dashboard from "@uppy/dashboard";
 import ImageEditor from "@uppy/image-editor";
-import Compressor from "@uppy/compressor";
 import Transloadit from "@uppy/transloadit";
 
 import { useColorSchemeSwitcher } from "color-scheme-switcher";
@@ -56,7 +55,6 @@ const ImageUploadButton: React.FC<ImageUploadButtonProps> = ({
         proudlyDisplayPoweredByUppy: false,
       })
       .use(ImageEditor, { target: Dashboard })
-      .use(Compressor)
       .use(Transloadit, {
         assemblyOptions: {
           params: {

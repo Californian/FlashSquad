@@ -10,6 +10,7 @@ import {
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { useEffect, useState } from "react";
 import { Button, LoadingOverlay } from "@mantine/core";
+import { useRouter } from "next/router";
 
 interface AuthButtonProps {}
 
@@ -52,6 +53,8 @@ const AuthButton: React.FC<AuthButtonProps> = ({}) => {
     }
   };
 
+  const router = useRouter();
+
   useEffect(() => {
     if (isConnected && !session) {
       handleLogin();
@@ -63,14 +66,16 @@ const AuthButton: React.FC<AuthButtonProps> = ({}) => {
       <LoadingOverlay visible={loginIsLoading} />
       <Button
         disabled={sessionIsLoading}
-        onClick={() => {
+        onClick={async () => {
+          setLoginIsLoading(true);
+
           if (!sessionIsLoading) {
             if (session?.user) {
               disconnect();
-              signOut();
+              await signOut({ redirect: false });
+              router.push("/");
             } else {
               if (!isConnected) {
-                setLoginIsLoading(true);
                 connect();
               } else {
                 handleLogin();

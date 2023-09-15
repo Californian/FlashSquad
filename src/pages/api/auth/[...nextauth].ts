@@ -1,127 +1,7 @@
 import NextAuth, { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getCsrfToken } from "next-auth/react";
-import { SiweMessage } from "siwe";
-import jsonwebtoken from "jsonwebtoken";
 import { Secret } from "next-auth/jwt";
-import {
-  ApolloClient,
-  InMemoryCache,
-  from,
-  HttpLink,
-  gql,
-} from "@apollo/client";
-import { setContext } from "@apollo/client/link/context";
-import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
-
-if (process.env.NODE_ENV !== "production") {
-  // Adds messages only in a dev environment
-  loadDevMessages();
-  loadErrorMessages();
-}
-
-const CreateOrUpdateUserMutation = gql`
-  mutation CreateOrUpdateUserByExternalId(
-    $externalId: String!
-    $displayName: String!
-    $profileImage: ImagesObjRelInsertInput
-  ) {
-    insertUsersOne(
-      object: {
-        externalId: $externalId
-        displayName: $displayName
-        profileImage: $profileImage
-      }
-      onConflict: {
-        constraint: users_external_id_key
-        updateColumns: [externalId]
-      }
-    ) {
-      id
-      externalId
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-const CreateOrUpdateSquadsMutation = gql`
-  mutation CreateOrUpdateSquads($squadObjects: [SquadsInsertInput!]!) {
-    insertSquads(
-      objects: $squadObjects
-      onConflict: {
-        constraint: squads_contract_address_token_id_key
-        updateColumns: [updatedAt]
-      }
-    ) {
-      returning {
-        id
-        displayName
-        description
-        brandColor
-        image {
-          id
-          url
-          altText
-          description
-          createdAt
-          updatedAt
-        }
-        userSquadRelationships {
-          userId
-          squadId
-          isAdmin
-          createdAt
-          updatedAt
-        }
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-
-const GetNFTsByWalletAddressQuery = gql`
-  query GetNFTsByWalletAddress($address: String!) {
-    ethereum {
-      walletByAddress(address: $address) {
-        address
-        ensName
-        walletNFTs {
-          edges {
-            node {
-              nft {
-                contractAddress
-                tokenId
-                name
-                description
-                metadata
-              }
-            }
-          }
-        }
-      }
-    }
-    polygon {
-      walletByAddress(address: $address) {
-        walletNFTs {
-          edges {
-            node {
-              nft {
-                contractAddress
-                description
-                externalUrl
-                name
-                tokenId
-                metadata
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -142,6 +22,8 @@ export default async function auth(req: any, res: any) {
         },
       },
       async authorize(credentials) {
+        const { SiweMessage } = await import("siwe");
+
         try {
           const siwe = new SiweMessage(
             JSON.parse(credentials?.message || "{}"),
@@ -172,14 +54,6 @@ export default async function auth(req: any, res: any) {
     }),
   ];
 
-  const isDefaultSigninPage =
-    req.method === "GET" && req.query.nextauth.includes("signin");
-
-  // Hide Sign-In with Ethereum from default sign page
-  if (isDefaultSigninPage) {
-    providers.pop();
-  }
-
   return await NextAuth(req, res, {
     providers,
     session: {
@@ -188,6 +62,123 @@ export default async function auth(req: any, res: any) {
     secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
       async session({ session, token }: { session: any; token: any }) {
+        const jsonwebtoken = await import("jsonwebtoken");
+        const { ApolloClient, InMemoryCache, from, HttpLink, gql } =
+          await import("@apollo/client");
+        const { setContext } = await import("@apollo/client/link/context");
+        const { loadErrorMessages, loadDevMessages } = await import(
+          "@apollo/client/dev"
+        );
+
+        if (process.env.NODE_ENV === "development") {
+          // Adds messages only in a dev environment
+          loadDevMessages();
+          loadErrorMessages();
+        }
+
+        const CreateOrUpdateUserMutation = gql`
+          mutation CreateOrUpdateUserByExternalId(
+            $externalId: String!
+            $displayName: String!
+            $profileImage: ImagesObjRelInsertInput
+          ) {
+            insertUsersOne(
+              object: {
+                externalId: $externalId
+                displayName: $displayName
+                profileImage: $profileImage
+              }
+              onConflict: {
+                constraint: users_external_id_key
+                updateColumns: [externalId]
+              }
+            ) {
+              id
+              externalId
+              createdAt
+              updatedAt
+            }
+          }
+        `;
+
+        const CreateOrUpdateSquadsMutation = gql`
+          mutation CreateOrUpdateSquads($squadObjects: [SquadsInsertInput!]!) {
+            insertSquads(
+              objects: $squadObjects
+              onConflict: {
+                constraint: squads_contract_address_token_id_key
+                updateColumns: [updatedAt]
+              }
+            ) {
+              returning {
+                id
+                displayName
+                description
+                brandColor
+                image {
+                  id
+                  url
+                  altText
+                  description
+                  createdAt
+                  updatedAt
+                }
+                userSquadRelationships {
+                  userId
+                  squadId
+                  isAdmin
+                  createdAt
+                  updatedAt
+                }
+                createdAt
+                updatedAt
+              }
+            }
+          }
+        `;
+
+        const GetNFTsByWalletAddressQuery = gql`
+          query GetNFTsByWalletAddress($address: String!) {
+            ethereum {
+              walletByAddress(address: $address) {
+                address
+                ensName
+                walletNFTs {
+                  edges {
+                    node {
+                      nft {
+                        contractAddress
+                        tokenId
+                        name
+                        description
+                        metadata
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            polygon {
+              walletByAddress(address: $address) {
+                walletNFTs {
+                  edges {
+                    node {
+                      nft {
+                        contractAddress
+                        description
+                        externalUrl
+                        name
+                        tokenId
+                        metadata
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+
         const { sub } = token;
 
         session.user.walletAddress = sub;

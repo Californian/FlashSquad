@@ -53,7 +53,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (sessionStatus === "authenticated") {
+    if (sessionStatus === "authenticated" && currentUser?.id) {
       const firstSquadId = squads?.[0]?.id;
       if (lastVisitedSquadId) {
         router.push(`/squads/${lastVisitedSquadId}/feed`);
