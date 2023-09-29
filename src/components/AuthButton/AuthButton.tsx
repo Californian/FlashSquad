@@ -12,9 +12,11 @@ import { useEffect, useState } from "react";
 import { Button, LoadingOverlay } from "@mantine/core";
 import { useRouter } from "next/router";
 
-interface AuthButtonProps {}
+interface AuthButtonProps {
+  fullWidth?: boolean;
+}
 
-const AuthButton: React.FC<AuthButtonProps> = ({}) => {
+const AuthButton: React.FC<AuthButtonProps> = ({ fullWidth = false }) => {
   const { signMessageAsync } = useSignMessage();
   const { chain } = useNetwork();
   const { address, isConnected } = useAccount();
@@ -65,6 +67,7 @@ const AuthButton: React.FC<AuthButtonProps> = ({}) => {
     <>
       <LoadingOverlay visible={loginIsLoading} />
       <Button
+        fullWidth={fullWidth}
         disabled={sessionIsLoading}
         onClick={async () => {
           setLoginIsLoading(true);

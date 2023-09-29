@@ -30,41 +30,18 @@ const GetCurrentUserQuery = gql`
   query GetCurrentUser($userId: uuid!) {
     usersByPk(id: $userId) {
       id
-      externalId
-      displayName
-      bio
-      profileImage {
+      currentPersona {
         id
-        url
-        altText
-        createdAt
-        updatedAt
-      }
-      createdAt
-      updatedAt
-      userSquadRelationships {
-        userId
-        squadId
-        isAdmin
-        createdAt
-        updatedAt
-        squad {
+        displayName
+        profileImage {
           id
-          displayName
-          description
-          brandColor
-          typeface
-          image {
-            id
-            url
-            altText
-            description
-            createdAt
-            updatedAt
-          }
+          url
+          altText
           createdAt
           updatedAt
         }
+        createdAt
+        updatedAt
       }
     }
   }
@@ -117,15 +94,13 @@ const FeedPage = () => {
   const { data: sessionData } = useSession();
   const { user: sessionUser } = sessionData ?? {};
 
-  const {
-    loading: currentUserIsLoading,
-    error: currentUserError,
-    data: { usersByPk: currentUser } = {},
-    refetch: currentUserRefetch,
-  } = useQuery(GetCurrentUserQuery, {
-    variables: { userId: sessionUser?.id },
-    skip: !sessionUser?.id,
-  });
+  const { data: { usersByPk: currentUser } = {} } = useQuery(
+    GetCurrentUserQuery,
+    {
+      variables: { userId: sessionUser?.id },
+      skip: !sessionUser?.id,
+    },
+  );
 
   const [postImageUrl, setPostImageUrl] = useState<string | undefined>();
   const [postImageAltText, setPostImageAltText] = useState<
@@ -155,11 +130,14 @@ const FeedPage = () => {
         <Stack justify="flex-start" h="100%">
           <Group position="apart">
             <Group position="left">
-              <Avatar src={currentUser?.profileImage?.url} radius="xl">
+              <Avatar
+                src={currentUser?.currentPersona?.profileImage?.url}
+                radius="xl"
+              >
                 <FontAwesomeIcon icon={faUser} />
               </Avatar>
               <Center>
-                <Text>{currentUser?.displayName}</Text>
+                <Text>{currentUser?.currentPersona?.displayName}</Text>
               </Center>
             </Group>
             <Group position="right">
@@ -224,7 +202,7 @@ const FeedPage = () => {
                   createPost({
                     variables: {
                       body: content,
-                      authorId: sessionUser?.id,
+                      authorId: currentUser?.currentPersona?.id,
                       squadId,
                       postImageData: postImageUrl
                         ? {

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
 import {
   Container,
-  Loader,
   Text,
   Paper,
   LoadingOverlay,
@@ -12,6 +11,7 @@ import {
   Group,
   Stack,
   Center,
+  Space,
 } from "@mantine/core";
 import { Prism } from "@mantine/prism";
 import { useLocalStorage } from "@mantine/hooks";
@@ -66,10 +66,23 @@ export default function HomePage() {
 
   return (
     <Container size="xs" p="sm" h="100vh">
-      <Center>
-        <Paper shadow="xl" radius="lg" p="lg">
+      <Center h="100%">
+        <Paper shadow="xl" radius="md" p={100} color="primary">
           <Stack>
-            <Title fw={350}>Welcome to FlashSquad</Title>
+            <Title
+              order={2}
+              weight={300}
+              italic
+              color="dimmed"
+              sx={{ margin: "0 !important" }}
+            >
+              welcome to
+            </Title>
+            <Title order={1} weight={400} sx={{ marginTop: "0 !important" }}>
+              FlashSquad
+            </Title>
+            <Space />
+            <Space />
             <LoadingOverlay visible={isLoading} />
             {error ? (
               <>
@@ -78,7 +91,7 @@ export default function HomePage() {
               </>
             ) : (
               <Group position="center">
-                <AuthButton />
+                <AuthButton fullWidth />
                 {sessionStatus === "authenticated" && !isLoading && (
                   <Text>You'll need an NFT to get started!</Text>
                 )}

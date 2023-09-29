@@ -100,6 +100,7 @@ const App = ({
             colorScheme,
             primaryColor: "bright-blue",
             primaryShade: { light: 3, dark: 5 },
+            loader: "dots",
             colors: {
               "bright-blue": [
                 "#0B042F",
@@ -114,7 +115,12 @@ const App = ({
                 "#EBE8FD",
               ],
             },
-            loader: "dots",
+            globalStyles: (theme) => ({
+              body: {
+                backgroundColor:
+                  theme.colors[theme.primaryColor][theme.fn.primaryShade() + 3],
+              },
+            }),
             components: {
               ActionIcon: {
                 sizes: {

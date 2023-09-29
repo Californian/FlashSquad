@@ -13,32 +13,18 @@ import { gql, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
 
 const GetUserSquadsQuery = gql`
-  query GetUserSquads($userId: uuid!) {
-    squads(
-      where: {
-        userSquadRelationships: {
-          userId: { _eq: $userId }
-          isHidden: { _eq: false }
-        }
-      }
-    ) {
+  query GetUserSquads {
+    squads(where: { nftCollection: { nfts: { isHidden: { _eq: false } } } }) {
       id
-      contractAddress
-      tokenId
       displayName
       description
-      image {
+      squadImage {
         id
         url
         altText
       }
       brandColor
       typeface
-      userSquadRelationships(where: { userId: { _eq: $userId } }) {
-        isAdmin
-        userId
-        squadId
-      }
       createdAt
       updatedAt
     }
@@ -78,7 +64,6 @@ const SquadList: React.FC<SquadListProps> = ({ screenIsThin }) => {
           image,
           brandColor,
           typeface,
-          userSquadRelationships,
           createdAt,
           updatedAt,
         }) => (

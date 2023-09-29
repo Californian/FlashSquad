@@ -23,26 +23,35 @@ const GetSquadMembersQuery = gql`
   query GetSquadMembers($squadId: uuid!) {
     squadsByPk(id: $squadId) {
       id
-      userSquadRelationships {
-        squadId
-        userId
-        isAdmin
-        user {
-          id
-          externalId
-          displayName
-          bio
-          profileImage {
-            url
-            altText
-          }
-        }
-        createdAt
-        updatedAt
+      displayName
+      description
+      brandColor
+      squadImage {
+        id
+        altText
+        url
       }
-      userSquadRelationshipsAggregate {
-        aggregate {
-          count
+      nftCollection {
+        id
+        network
+        contractAddress
+        nfts {
+          id
+          tokenId
+          persona {
+            id
+            profileImage {
+              id
+              altText
+              description
+              url
+            }
+          }
+          wallet {
+            id
+            address
+            ensName
+          }
         }
       }
     }
@@ -54,18 +63,23 @@ const SquadMembersPage = () => {
     query: { squadId },
   } = useRouter();
 
-  const { data: { squadsByPk: { userSquadRelationships = [] } = {} } = {} } =
-    useQuery(GetSquadMembersQuery, {
-      variables: { squadId },
-    });
+  const {
+    data: {
+      squadsByPk: {
+        nftCollection: { nfts = [] },
+      },
+    },
+  } = useQuery(GetSquadMembersQuery, {
+    variables: { squadId },
+    skip: !squadId,
+  });
 
   return (
     <FlashSquadAppShell pageTitle="Members">
-      {userSquadRelationships.map(
+      {nfts.map(
         ({
-          isAdmin,
-          user: {
-            id: userId,
+          persona: {
+            id: personaId,
             externalId,
             displayName,
             bio,
@@ -74,10 +88,8 @@ const SquadMembersPage = () => {
               altText: profileImageAltText,
             },
           },
-          createdAt,
-          updatedAt,
         }) => (
-          <Box key={userId}>
+          <Box key={personaId}>
             <Card shadow="sm" padding="lg" radius="md" withBorder>
               <Flex
                 mih={50}
