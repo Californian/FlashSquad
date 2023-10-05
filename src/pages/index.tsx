@@ -19,16 +19,29 @@ import { useLocalStorage } from "@mantine/hooks";
 import { AuthButton, UserAuthSection } from "@/components";
 
 const GetUserSquadsQuery = gql`
-  query GetUserSquads($userId: uuid!) {
-    squads(
-      where: {
-        userSquadRelationships: {
-          userId: { _eq: $userId }
-          isHidden: { _eq: false }
-        }
-      }
-    ) {
+  query GetUserSquads {
+    squads {
       id
+      displayName
+      description
+      squadImage {
+        id
+        url
+        altText
+      }
+      userSquadRelationships {
+        userId
+        squadId
+        isHidden
+      }
+      nftCollection {
+        id
+        contractAddress
+      }
+      brandColor
+      typeface
+      createdAt
+      updatedAt
     }
   }
 `;
