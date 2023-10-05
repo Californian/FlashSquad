@@ -62,6 +62,7 @@ const SquadVisibilityModal: React.FC<SquadVisibilityModalProps> = ({
             userSquadRelationships: [{ isHidden = false } = {}] = [{}],
           }) => (
             <Checkbox
+              key={id}
               m="1rem"
               checked={!isHidden}
               label={displayName ?? contractAddress}
