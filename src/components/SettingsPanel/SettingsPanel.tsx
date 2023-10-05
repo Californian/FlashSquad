@@ -540,7 +540,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       weight={200}
                       maw={300}
                       w="100%"
-                      sx={{ overflowWrap: "break-word" }}
+                      sx={{
+                        overflowWrap: "break-word",
+                        textAlign: screenIsThin ? "left" : "right",
+                        direction: "ltr",
+                      }}
                     >
                       You haven't written a bio yet!
                     </Text>
