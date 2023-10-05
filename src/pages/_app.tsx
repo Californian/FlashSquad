@@ -8,7 +8,12 @@ import type { AppProps } from "next/app";
 // import { getCookie, setCookie } from "cookies-next";
 import { getCookie } from "cookies-next";
 import Head from "next/head";
-import { MantineProvider, TypographyStylesProvider } from "@mantine/core";
+import {
+  DEFAULT_THEME,
+  MantineColor,
+  MantineProvider,
+  TypographyStylesProvider,
+} from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { Notifications } from "@mantine/notifications";
 import { ColorSchemeSwitcherProvider } from "color-scheme-switcher";
@@ -21,6 +26,7 @@ import { InjectedConnector } from "wagmi/connectors/injected";
 
 import { ApolloProviderWrapper, AuthChecker } from "@/components";
 import { useRouter } from "next/router";
+import { PrimaryColorSwitcherProvider } from "@/utils";
 
 export const { chains, publicClient } = configureChains(
   [mainnet, polygon, optimism],
@@ -39,13 +45,7 @@ const App = ({
 }: AppProps<{
   session: Session;
 }>) => {
-  /* TODO: Re-integrate this.
-  const [primaryColor, setPrimaryColor] = useLocalStorage<MantineColor>({
-    key: "primary-color",
-    defaultValue: DEFAULT_THEME.primaryColor,
-  });
-  */
-  const [lastVisitedSquad, setLastVisitedSquad] = useLocalStorage<string>({
+  const [_lastVisitedSquad, setLastVisitedSquad] = useLocalStorage<string>({
     key: "last-visited-squad",
   });
 
@@ -56,6 +56,14 @@ const App = ({
 
   const setColorSchemeIsLightCallback = (colorSchemeIsLight: boolean) => {
     setColorScheme(colorSchemeIsLight ? "light" : "dark");
+  };
+
+  const [primaryColor, setPrimaryColor] = useState<string>(
+    DEFAULT_THEME.primaryColor,
+  );
+
+  const setPrimaryColorCallback = (primaryColor: string) => {
+    setPrimaryColor(primaryColor);
   };
 
   const router = useRouter();
@@ -95,80 +103,86 @@ const App = ({
         defaultColorSchemeIsLight={defaultColorSchemeIsLight}
         setColorSchemeIsLightCallback={setColorSchemeIsLightCallback}
       >
-        <MantineProvider
-          theme={{
-            colorScheme,
-            //primaryColor: "bright-blue",
-            //primaryShade: { light: 3, dark: 5 },
-            loader: "dots",
-            colors: {
-              "bright-blue": [
-                "#0B042F",
-                "#16085E",
-                "#210C8D",
-                "#2B10BC",
-                "#3614EB",
-                "#5A3EEF",
-                "#7F69F2",
-                "#A393F6",
-                "#C7BDF9",
-                "#EBE8FD",
-              ],
-            },
-            globalStyles: (theme) => ({
-              body: {
-                backgroundColor:
-                  theme.colors[theme.primaryColor][theme.fn.primaryShade() + 3],
+        <PrimaryColorSwitcherProvider
+          setPrimaryColorCallback={setPrimaryColorCallback}
+        >
+          <MantineProvider
+            theme={{
+              colorScheme,
+              primaryColor,
+              //primaryShade: { light: 3, dark: 5 },
+              loader: "dots",
+              colors: {
+                "bright-blue": [
+                  "#0B042F",
+                  "#16085E",
+                  "#210C8D",
+                  "#2B10BC",
+                  "#3614EB",
+                  "#5A3EEF",
+                  "#7F69F2",
+                  "#A393F6",
+                  "#C7BDF9",
+                  "#EBE8FD",
+                ],
               },
-            }),
-            components: {
-              ActionIcon: {
-                sizes: {
-                  xxl: (theme) => ({
+              globalStyles: (theme) => ({
+                body: {
+                  backgroundColor:
+                    theme.colors[theme.primaryColor][
+                      theme.fn.primaryShade() + 3
+                    ],
+                },
+              }),
+              components: {
+                ActionIcon: {
+                  sizes: {
+                    xxl: (theme) => ({
+                      root: {
+                        fontSize: "1.75rem",
+                        height: "4rem",
+                        width: "4rem",
+                        padding: theme.spacing.xl,
+                      },
+                    }),
+                  },
+                },
+                Button: {
+                  defaultProps: {
+                    radius: "xl",
+                  },
+                },
+                Overlay: {
+                  defaultProps: {
+                    blur: 3,
+                  },
+                },
+                Title: {
+                  styles: {
                     root: {
-                      fontSize: "1.75rem",
-                      height: "4rem",
-                      width: "4rem",
-                      padding: theme.spacing.xl,
+                      margin: "0 !important",
                     },
-                  }),
-                },
-              },
-              Button: {
-                defaultProps: {
-                  radius: "xl",
-                },
-              },
-              Overlay: {
-                defaultProps: {
-                  blur: 3,
-                },
-              },
-              Title: {
-                styles: {
-                  root: {
-                    margin: "0 !important",
                   },
                 },
               },
-            },
-          }}
-          withGlobalStyles
-          withNormalizeCSS
-        >
-          <TypographyStylesProvider>
-            <WagmiConfig config={config}>
-              <SessionProvider session={session}>
-                <ApolloProviderWrapper>
-                  <AuthChecker>
-                    <Component {...pageProps} />
-                  </AuthChecker>
-                </ApolloProviderWrapper>
-                <Notifications />
-              </SessionProvider>
-            </WagmiConfig>
-          </TypographyStylesProvider>
-        </MantineProvider>
+            }}
+            withGlobalStyles
+            withNormalizeCSS
+          >
+            <TypographyStylesProvider>
+              <WagmiConfig config={config}>
+                <SessionProvider session={session}>
+                  <ApolloProviderWrapper>
+                    <AuthChecker>
+                      <Component {...pageProps} />
+                    </AuthChecker>
+                  </ApolloProviderWrapper>
+                  <Notifications />
+                </SessionProvider>
+              </WagmiConfig>
+            </TypographyStylesProvider>
+          </MantineProvider>
+        </PrimaryColorSwitcherProvider>
       </ColorSchemeSwitcherProvider>
     </>
   );

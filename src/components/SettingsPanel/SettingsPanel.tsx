@@ -10,6 +10,7 @@ import {
   BackgroundImage,
   Box,
   ColorSwatch,
+  DEFAULT_THEME,
   Divider,
   FileButton,
   Group,
@@ -19,6 +20,7 @@ import {
   Text,
   Textarea,
   Title,
+  Tooltip,
   useMantineTheme,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -42,6 +44,7 @@ import {
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import { usePrimaryColorSwitcher } from "@/utils";
 
 interface SettingsPanelProps {
   settingsPanelIsOpen: boolean;
@@ -190,6 +193,20 @@ const SetSquadImageMutation = gql`
   }
 `;
 
+const UpdateSquadBrandColorMutation = gql`
+  mutation UpdateSquadBrandColor($squadId: uuid!, $brandColor: String!) {
+    updateSquadsByPk(
+      pkColumns: { id: $squadId }
+      _set: { brandColor: $brandColor }
+    ) {
+      id
+      brandColor
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 const UpdatePersonaBioMutation = gql`
   mutation UpdatePersonaBio($personaId: uuid!, $bio: String!) {
     updatePersonasByPk(pkColumns: { id: $personaId }, _set: { bio: $bio }) {
@@ -215,7 +232,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [userBioIsInEditMode, setUserBioIsInEditMode] = useState(false);
   const theme = useMantineTheme();
 
-  const { primaryColor, setPrimaryColor } = useContext(ColorContext);
+  const { primaryColor, setPrimaryColor } = usePrimaryColorSwitcher();
 
   const {
     loading: currentUserIsLoading,
@@ -365,6 +382,38 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     [squadId, createImage, setSquadImage, currentSquadRefetch],
   );
 
+  const [updateSquadBrandColor, { loading: updateSquadBrandColorIsLoading }] =
+    useMutation(UpdateSquadBrandColorMutation);
+
+  const handleSquadColorSelect = useCallback(
+    (color: string) => async () => {
+      setPrimaryColor(color);
+      await updateSquadBrandColor({
+        variables: { squadId, brandColor: color },
+      });
+      currentSquadRefetch();
+    },
+    [setPrimaryColor],
+  );
+
+  useEffect(() => {
+    (async () => {
+      if (!currentSquadIsLoading && !updateSquadBrandColorIsLoading) {
+        if (!!currentSquad?.brandColor) {
+          setPrimaryColor(currentSquad?.brandColor);
+        } else {
+          handleSquadColorSelect(DEFAULT_THEME.primaryColor)();
+        }
+      }
+    })();
+  }, [
+    currentSquadIsLoading,
+    updateSquadBrandColorIsLoading,
+    currentSquad,
+    setPrimaryColor,
+    handleSquadColorSelect,
+  ]);
+
   const [
     updatePersonaBio,
     {
@@ -428,16 +477,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </Title>
               <Group spacing="xs" maw={300}>
                 {Object.keys(theme.colors).map((color) => (
-                  <ColorSwatch
-                    key={color}
-                    color={theme.colors[color][theme.fn.primaryShade()]}
-                    component="button"
-                    onClick={() => setPrimaryColor(color)}
-                  >
-                    {color === primaryColor && (
-                      <FontAwesomeIcon icon={faCheck} />
-                    )}
-                  </ColorSwatch>
+                  <Tooltip key={color} label={color}>
+                    <ColorSwatch
+                      color={theme.colors[color][theme.fn.primaryShade()]}
+                      component="button"
+                      onClick={handleSquadColorSelect(color)}
+                    >
+                      {color === primaryColor && (
+                        <FontAwesomeIcon icon={faCheck} />
+                      )}
+                    </ColorSwatch>
+                  </Tooltip>
                 ))}
               </Group>
             </Stack>
