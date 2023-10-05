@@ -110,20 +110,19 @@ const App = ({
             theme={{
               colorScheme,
               primaryColor,
-              //primaryShade: { light: 3, dark: 5 },
               loader: "dots",
               colors: {
-                "bright-blue": [
-                  "#0B042F",
-                  "#16085E",
-                  "#210C8D",
-                  "#2B10BC",
-                  "#3614EB",
-                  "#5A3EEF",
-                  "#7F69F2",
-                  "#A393F6",
-                  "#C7BDF9",
-                  "#EBE8FD",
+                brown: [
+                  "#EFEBE9",
+                  "#D7CCC8",
+                  "#BCAAA4",
+                  "#A1887F",
+                  "#8D6E63",
+                  "#795548",
+                  "#6D4C41",
+                  "#5D4037",
+                  "#4E342E",
+                  "#3E2723",
                 ],
               },
               globalStyles: (theme) => ({

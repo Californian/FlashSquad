@@ -45,6 +45,7 @@ import { gql, useMutation, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { usePrimaryColorSwitcher } from "@/utils";
+import { useColorSchemeSwitcher } from "color-scheme-switcher";
 
 interface SettingsPanelProps {
   settingsPanelIsOpen: boolean;
@@ -231,6 +232,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const [userBioIsInEditMode, setUserBioIsInEditMode] = useState(false);
   const theme = useMantineTheme();
+  const { colorSchemeIsLight } = useColorSchemeSwitcher();
 
   const { primaryColor, setPrimaryColor } = usePrimaryColorSwitcher();
 
@@ -476,19 +478,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 Squad Color
               </Title>
               <Group spacing="xs" maw={300}>
-                {Object.keys(theme.colors).map((color) => (
-                  <Tooltip key={color} label={color}>
-                    <ColorSwatch
-                      color={theme.colors[color][theme.fn.primaryShade()]}
-                      component="button"
-                      onClick={handleSquadColorSelect(color)}
-                    >
-                      {color === primaryColor && (
-                        <FontAwesomeIcon icon={faCheck} />
-                      )}
-                    </ColorSwatch>
-                  </Tooltip>
-                ))}
+                {Object.keys(theme.colors)
+                  .filter((color) => color !== "dark")
+                  .map((color) => (
+                    <Tooltip key={color} label={color}>
+                      <ColorSwatch
+                        color={theme.colors[color][theme.fn.primaryShade()]}
+                        component="button"
+                        onClick={handleSquadColorSelect(color)}
+                        sx={{
+                          color: colorSchemeIsLight ? theme.white : theme.black,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {color === primaryColor && (
+                          <FontAwesomeIcon icon={faCheck} />
+                        )}
+                      </ColorSwatch>
+                    </Tooltip>
+                  ))}
               </Group>
             </Stack>
           </Tabs.Panel>
