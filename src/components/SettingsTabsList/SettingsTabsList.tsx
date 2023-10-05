@@ -10,20 +10,28 @@ const SettingsTabsList: React.FC<SettingsTabsListProps> = ({
   shouldShowSquad,
 }) => {
   return (
-    <Tabs.List position="right" mx="-1rem">
+    <Tabs.List>
+      <Tabs.Tab
+        value="user"
+        icon={<FontAwesomeIcon style={{ marginLeft: "0.5em" }} icon={faUser} />}
+      >
+        User
+      </Tabs.Tab>
       {shouldShowSquad ? (
         <Tabs.Tab
           value="squad"
-          rightSection={<FontAwesomeIcon icon={faPeopleGroup} />}
+          icon={
+            <FontAwesomeIcon
+              style={{ marginLeft: "0.5em" }}
+              icon={faPeopleGroup}
+            />
+          }
         >
           Squad
         </Tabs.Tab>
       ) : (
         <></>
       )}
-      <Tabs.Tab value="user" rightSection={<FontAwesomeIcon icon={faUser} />}>
-        User
-      </Tabs.Tab>
     </Tabs.List>
   );
 };

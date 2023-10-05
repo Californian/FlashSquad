@@ -12,6 +12,7 @@ import {
   Avatar,
   LoadingOverlay,
   Container,
+  useMantineTheme,
 } from "@mantine/core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClose, faUser } from "@fortawesome/free-solid-svg-icons";
@@ -25,20 +26,27 @@ import {
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import { useColorSchemeSwitcher } from "color-scheme-switcher";
 
 const GetCurrentUserQuery = gql`
   query GetCurrentUser($userId: uuid!) {
     usersByPk(id: $userId) {
       id
-      currentPersona {
+      userSquadRelationships {
         id
-        displayName
-        profileImage {
+        squadId
+        userId
+        currentPersona {
           id
-          url
-          altText
-          createdAt
-          updatedAt
+          displayName
+          bio
+          profileImage {
+            id
+            url
+            altText
+            createdAt
+            updatedAt
+          }
         }
         createdAt
         updatedAt
@@ -81,7 +89,8 @@ const CreatePostMutation = gql`
   }
 `;
 
-const FeedPage = () => {
+const ComposePage = () => {
+  const { colorSchemeIsLight } = useColorSchemeSwitcher();
   const router = useRouter();
   const {
     query: { squadId },
@@ -123,6 +132,10 @@ const FeedPage = () => {
     }
   }, [createPostIsLoading]);
 
+  const currentPersona = currentUser?.userSquadRelationships?.filter(
+    ({ squadId: relationshipSquadId }) => relationshipSquadId === squadId,
+  )[0]?.currentPersona;
+
   return (
     <FlashSquadAppShell>
       <LoadingOverlay visible={createPostIsLoading} />
@@ -130,14 +143,11 @@ const FeedPage = () => {
         <Stack justify="flex-start" h="100%">
           <Group position="apart">
             <Group position="left">
-              <Avatar
-                src={currentUser?.currentPersona?.profileImage?.url}
-                radius="xl"
-              >
+              <Avatar src={currentPersona?.profileImage?.url} radius="xl">
                 <FontAwesomeIcon icon={faUser} />
               </Avatar>
               <Center>
-                <Text>{currentUser?.currentPersona?.displayName}</Text>
+                <Text>{currentPersona?.displayName}</Text>
               </Center>
             </Group>
             <Group position="right">
@@ -146,26 +156,30 @@ const FeedPage = () => {
           </Group>
 
           <Textarea
-            styles={{
+            styles={(theme) => ({
               input: {
-                backgroundColor: "#000000",
+                backgroundColor: theme.colors.dark[colorSchemeIsLight ? 0 : 9],
                 border: 0,
-                padding: 0,
                 height: "100%",
+                "::placeholder": {
+                  color: theme.colors.dark[3],
+                },
               },
               root: { height: "100%" },
               wrapper: { height: "100%" },
-            }}
-            placeholder="Start typing..."
+            })}
+            placeholder="Say anything..."
             onChange={({ target: { value } }) => setContent(value)}
           />
 
-          <Container
-            fluid
-            sx={{ height: "100%", textAlign: "left", margin: 0 }}
-          >
-            <FlashSquadMarkdown body={content} />
-          </Container>
+          {false && (
+            <Container
+              fluid
+              sx={{ height: "100%", textAlign: "left", margin: 0 }}
+            >
+              <FlashSquadMarkdown body={content} />
+            </Container>
+          )}
         </Stack>
 
         <Stack justify="flex-end">
@@ -202,7 +216,7 @@ const FeedPage = () => {
                   createPost({
                     variables: {
                       body: content,
-                      authorId: currentUser?.currentPersona?.id,
+                      authorId: currentPersona?.id,
                       squadId,
                       postImageData: postImageUrl
                         ? {
@@ -254,4 +268,4 @@ const FeedPage = () => {
   );
 };
 
-export default FeedPage;
+export default ComposePage;

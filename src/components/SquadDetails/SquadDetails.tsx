@@ -23,13 +23,11 @@ const GetCurrentSquadQuery = gql`
   query GetCurrentSquad($squadId: uuid!) {
     squadsByPk(id: $squadId) {
       id
-      contractAddress
-      tokenId
       displayName
       description
       brandColor
       typeface
-      image {
+      squadImage {
         id
         url
         altText
@@ -86,7 +84,7 @@ const SquadDetails: React.FC<SquadDetailsProps> = ({ width = "100%" }) => {
       <Group position="apart" h={128}>
         <Box sx={{ aspectRatio: `${PHI} / 1`, height: "100%" }}>
           <Image
-            src={currentSquad?.image?.url}
+            src={currentSquad?.squadImage?.url}
             radius="md"
             styles={{
               root: {

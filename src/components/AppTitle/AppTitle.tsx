@@ -11,7 +11,7 @@ const GetCurrentSquadQuery = gql`
     squadsByPk(id: $squadId) {
       id
       displayName
-      image {
+      squadImage {
         id
         url
         altText

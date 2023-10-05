@@ -98,8 +98,8 @@ const App = ({
         <MantineProvider
           theme={{
             colorScheme,
-            primaryColor: "bright-blue",
-            primaryShade: { light: 3, dark: 5 },
+            //primaryColor: "bright-blue",
+            //primaryShade: { light: 3, dark: 5 },
             loader: "dots",
             colors: {
               "bright-blue": [
@@ -142,6 +142,13 @@ const App = ({
               Overlay: {
                 defaultProps: {
                   blur: 3,
+                },
+              },
+              Title: {
+                styles: {
+                  root: {
+                    margin: "0 !important",
+                  },
                 },
               },
             },

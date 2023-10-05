@@ -22,7 +22,14 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useCallback, useContext, useEffect, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   UserAuthSection,
@@ -30,6 +37,7 @@ import {
   SettingsTabsList,
   ColorContext,
   ImageUploadButton,
+  PersonaSelector,
 } from "@/components";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useSession } from "next-auth/react";
@@ -55,9 +63,9 @@ const CreateImageMutation = gql`
 `;
 
 const SetProfileImageMutation = gql`
-  mutation SetProfileImage($userId: uuid!, $profileImageId: uuid!) {
-    updateUsersByPk(
-      pkColumns: { id: $userId }
+  mutation SetProfileImage($personaId: uuid!, $profileImageId: uuid!) {
+    updatePersonasByPk(
+      pkColumns: { id: $personaId }
       _set: { profileImageId: $profileImageId }
     ) {
       id
@@ -71,37 +79,28 @@ const GetCurrentUserQuery = gql`
   query GetCurrentUser($userId: uuid!) {
     usersByPk(id: $userId) {
       id
-      externalId
-      bio
-      profileImage {
-        id
-        url
-        altText
-        createdAt
-        updatedAt
-      }
       createdAt
       updatedAt
-      userSquadRelationships {
-        userId
-        squadId
-        isAdmin
-        createdAt
-        updatedAt
-        squad {
+    }
+  }
+`;
+
+const GetCurrentPersonaQuery = gql`
+  query GetCurrentPersona($userId: uuid!, $squadId: uuid!) {
+    userSquadRelationships(
+      where: { userId: { _eq: $userId }, squadId: { _eq: $squadId } }
+    ) {
+      id
+      userId
+      squadId
+      currentPersona {
+        id
+        displayName
+        bio
+        profileImage {
           id
-          displayName
-          description
-          brandColor
-          typeface
-          image {
-            id
-            url
-            altText
-            description
-            createdAt
-            updatedAt
-          }
+          url
+          altText
           createdAt
           updatedAt
         }
@@ -110,21 +109,67 @@ const GetCurrentUserQuery = gql`
   }
 `;
 
+const SetCurrentPersonaMutation = gql`
+  mutation SetCurrentPersona(
+    $userId: uuid!
+    $squadId: uuid!
+    $personaId: uuid!
+  ) {
+    insertUserSquadRelationshipsOne(
+      object: {
+        userId: $userId
+        squadId: $squadId
+        currentPersonaId: $personaId
+      }
+      onConflict: {
+        constraint: user_squad_relationships_user_id_squad_id_key
+        updateColumns: currentPersonaId
+      }
+    ) {
+      id
+    }
+  }
+`;
+
 const GetCurrentSquadQuery = gql`
   query GetCurrentSquad($squadId: uuid!) {
     squadsByPk(id: $squadId) {
       id
-      contractAddress
-      tokenId
       displayName
       description
       brandColor
       typeface
-      image {
+      squadImage {
         id
         url
         altText
         description
+      }
+      nftCollection {
+        id
+        contractAddress
+        nfts {
+          id
+          tokenId
+          persona {
+            id
+            displayName
+            bio
+            profileImage {
+              id
+              url
+            }
+            nft {
+              tokenId
+            }
+            createdAt
+            updatedAt
+          }
+          createdAt
+          updatedAt
+        }
+        createdAt
+        updatedAt
       }
       createdAt
       updatedAt
@@ -145,9 +190,9 @@ const SetSquadImageMutation = gql`
   }
 `;
 
-const UpdateUserBioMutation = gql`
-  mutation UpdateUserBio($userId: uuid!, $bio: String!) {
-    updateUsersByPk(pkColumns: { id: $userId }, _set: { bio: $bio }) {
+const UpdatePersonaBioMutation = gql`
+  mutation UpdatePersonaBio($personaId: uuid!, $bio: String!) {
+    updatePersonasByPk(pkColumns: { id: $personaId }, _set: { bio: $bio }) {
       id
       bio
       createdAt
@@ -188,6 +233,26 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   }, [userId]);
 
+  const {
+    data: {
+      userSquadRelationships: [{ currentPersona = {} } = {}] = [{}],
+    } = {},
+    loading: currentPersonaIsLoading,
+    refetch: currentPersonaRefetch,
+  } = useQuery(GetCurrentPersonaQuery, {
+    variables: { userId, squadId },
+    skip: !userId || !squadId,
+  });
+
+  const [
+    setCurrentPersona,
+    {
+      loading: setCurrentPersonaIsLoading,
+      error: setCurrentPersonaError,
+      data: setCurrentPersonaData,
+    },
+  ] = useMutation(SetCurrentPersonaMutation);
+
   const [
     createImage,
     {
@@ -206,6 +271,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     },
   ] = useMutation(SetProfileImageMutation);
 
+  const handlePersonaSelect = useCallback(
+    async (personaId: string) => {
+      await setCurrentPersona({ variables: { userId, squadId, personaId } });
+      currentPersonaRefetch({ userId, squadId });
+    },
+    [userId, squadId],
+  );
+
+  const currentPersonaIdRef = useRef(currentPersona?.id);
+
+  useEffect(() => {
+    currentPersonaIdRef.current = currentPersona?.id;
+  }, [currentPersona]);
+
   const handleProfileImageSelect = useCallback(
     async (url: string, fileName: string) => {
       const {
@@ -215,10 +294,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       } = await createImage({
         variables: { url, altText: fileName },
       });
-      await setProfileImage({ variables: { userId, profileImageId } });
-      currentUserRefetch();
+      await setProfileImage({
+        variables: {
+          personaId: currentPersonaIdRef?.current,
+          profileImageId,
+        },
+      });
+      currentPersonaRefetch({ userId, squadId });
     },
-    [userId],
+    [currentPersonaIdRef, createImage, setProfileImage, currentUserRefetch],
   );
 
   const {
@@ -230,6 +314,32 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     variables: { squadId },
     skip: !squadId,
   });
+
+  useEffect(() => {
+    (async () => {
+      if (
+        !currentPersonaIsLoading &&
+        !setCurrentPersonaIsLoading &&
+        !currentPersona?.id &&
+        !!currentSquad?.nftCollection?.nfts[0]?.persona?.id
+      ) {
+        await setCurrentPersona({
+          variables: {
+            userId,
+            squadId,
+            personaId: currentSquad?.nftCollection?.nfts[0]?.persona?.id,
+          },
+        });
+        await currentPersonaRefetch();
+      }
+    })();
+  }, [
+    currentPersonaIsLoading,
+    setCurrentPersonaIsLoading,
+    currentPersona,
+    currentSquad,
+    setCurrentPersona,
+  ]);
 
   const [
     setSquadImage,
@@ -250,61 +360,60 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       await setSquadImage({
         variables: { squadId, squadImageId },
       });
-      currentSquadRefetch();
+      currentSquadRefetch({ squadId });
     },
-    [squadId],
+    [squadId, createImage, setSquadImage, currentSquadRefetch],
   );
 
   const [
-    updateUserBio,
+    updatePersonaBio,
     {
-      loading: updateUserBioIsLoading,
-      error: updateUserBioError,
-      data: updateUserBioData,
+      loading: updatePersonaBioIsLoading,
+      error: updatePersonaBioError,
+      data: updatePersonaBioData,
     },
-  ] = useMutation(UpdateUserBioMutation);
+  ] = useMutation(UpdatePersonaBioMutation);
 
   const form = useForm({
     initialValues: {
-      userBio: currentUser?.bio,
+      userBio: currentPersona?.bio,
     },
   });
 
   useEffect(() => {
-    if (!form?.values?.userBio) {
-      form.setValues({
-        userBio: currentUser?.bio,
-      });
-    }
-  }, [currentUser]);
+    form.setValues({
+      userBio: currentPersona?.bio,
+    });
+  }, [currentPersona]);
 
   return (
     <Aside
       p="md"
-      width={settingsPanelIsOpen ? { sm: 200, lg: 300 } : { base: 0 }}
+      width={settingsPanelIsOpen ? { sm: 300, lg: 300 } : { base: 0 }}
       display={settingsPanelIsOpen ? undefined : "none"}
       sx={{ zIndex: 99 }}
     >
-      <Aside.Section grow my="-1rem">
-        <Tabs defaultValue="user" inverted={screenIsThin} h="100%" pb="2rem">
-          {screenIsThin ? undefined : (
-            <SettingsTabsList shouldShowSquad={!!squadId} />
-          )}
+      <Aside.Section
+        grow
+        my="-1rem"
+        sx={{
+          overflowY: "scroll",
+          overflowX: "hidden",
+          direction: screenIsThin ? "ltr" : "rtl",
+        }}
+      >
+        <Tabs defaultValue="user" h="100%" pb="1.5rem">
+          <SettingsTabsList shouldShowSquad={!!squadId} />
 
-          <Tabs.Panel value="squad" pt="xs" h="100%" pb="2rem">
-            <Stack
-              mt="1rem"
-              align="flex-end"
-              h="100%"
-              justify={screenIsThin ? "flex-end" : "flex-start"}
-            >
+          <Tabs.Panel value="squad" pt="xs" h="100%" pb="1.5rem">
+            <Stack mt="1rem" h="100%">
               <Title order={3} weight="300">
                 Squad Image
               </Title>
 
               <ImageUploadButton
                 buttonId="squad"
-                url={currentSquad?.image?.url}
+                url={currentSquad?.squadImage?.url}
                 handleSelect={handleSquadImageSelect}
                 borderRadius={theme.radius.lg}
                 minHeight="100px"
@@ -312,11 +421,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 aspectRatio={`${PHI} / 1`}
               />
 
-              <Space />
+              <Space h="1.5rem" />
+
               <Title order={3} weight="300">
                 Squad Color
               </Title>
-              <Group position="right" spacing="xs" maw={300}>
+              <Group spacing="xs" maw={300}>
                 {Object.keys(theme.colors).map((color) => (
                   <ColorSwatch
                     key={color}
@@ -333,20 +443,28 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </Stack>
           </Tabs.Panel>
 
-          <Tabs.Panel value="user" pt="xl" h="100%" pb="2rem">
-            <Stack
-              mt="1rem"
-              align="flex-end"
-              justify={screenIsThin ? "flex-end" : "flex-start"}
-              h="100%"
-            >
-              <Title order={3} weight="300" align="right">
+          <Tabs.Panel value="user" pt="xl" h="100%" pb="1.5rem">
+            <Stack mt="-1rem" h="100%">
+              <Title order={3} weight="300">
+                Persona
+              </Title>
+              <PersonaSelector
+                currentPersonaId={currentPersona?.id}
+                personas={currentSquad?.nftCollection?.nfts?.map(
+                  ({ persona }) => persona,
+                )}
+                handlePersonaSelect={handlePersonaSelect}
+              />
+
+              <Space h="1.5rem" />
+
+              <Title order={3} weight="300">
                 Profile Picture
               </Title>
-              <Group position="center">
+              <Group>
                 <ImageUploadButton
                   buttonId="profile"
-                  url={currentUser?.profileImage?.url}
+                  url={currentPersona?.profileImage?.url}
                   handleSelect={handleProfileImageSelect}
                   borderRadius="100%"
                   minHeight="100px"
@@ -355,59 +473,71 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 />
               </Group>
 
+              <Space h="1.5rem" />
+
               {userBioIsInEditMode ? (
                 <form
-                  style={{ maxWidth: 300, width: "100%", height: "7rem" }}
-                  onSubmit={form.onSubmit((values) => {
+                  style={{ maxWidth: 300, width: "100%" }}
+                  onSubmit={form.onSubmit(async (values) => {
                     form.setValues(values);
-                    updateUserBio({
+                    setUserBioIsInEditMode(false);
+                    await updatePersonaBio({
                       variables: {
-                        userId,
+                        personaId: currentPersona?.id,
                         bio: form.values.userBio,
                       },
                     });
                     currentUserRefetch();
-                    setUserBioIsInEditMode(false);
                   })}
                 >
                   <Group position="apart">
+                    <Title order={3} weight="300">
+                      Bio
+                    </Title>
                     <ActionIcon type="submit" size="xl">
                       <FontAwesomeIcon icon={faCheck} />
                     </ActionIcon>
-                    <Title order={3} weight="300" align="right">
-                      Bio
-                    </Title>
                   </Group>
-                  <Box h="7rem">
+                  <Box>
                     <Textarea
-                      minRows={7}
-                      maxRows={7}
+                      minRows={3}
                       placeholder="Your bio here..."
                       {...form.getInputProps("userBio")}
+                      styles={{
+                        input: {
+                          textAlign: screenIsThin ? "left" : "right",
+                          direction: "ltr",
+                        },
+                      }}
                     />
                   </Box>
                 </form>
               ) : (
                 <>
                   <Group position="apart">
+                    <Title order={3} weight="300">
+                      Bio
+                    </Title>
                     <ActionIcon
                       size="xl"
                       onClick={() => setUserBioIsInEditMode(true)}
                     >
                       <FontAwesomeIcon icon={faPen} />
                     </ActionIcon>
-                    <Title order={3} weight="300" align="right">
-                      Bio
-                    </Title>
                   </Group>
-                  {!!currentUser?.bio ? (
-                    <Text align="right">{currentUser?.bio}</Text>
+                  {!!currentPersona?.bio ? (
+                    <Text
+                      sx={{
+                        textAlign: screenIsThin ? "left" : "right",
+                        direction: "ltr",
+                      }}
+                    >
+                      {currentPersona?.bio}
+                    </Text>
                   ) : (
                     <Text
-                      align="right"
                       italic
                       weight={200}
-                      h="7rem"
                       maw={300}
                       w="100%"
                       sx={{ overflowWrap: "break-word" }}
@@ -418,22 +548,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </>
               )}
 
-              <Title order={3} weight="300" align="right">
+              <Space h="1.5rem" />
+
+              <Title order={3} weight="300">
                 Light/Dark Mode
               </Title>
-              <Group position="right">
+              <Group>
                 <ColorSchemeToggle />
               </Group>
             </Stack>
           </Tabs.Panel>
-
-          {screenIsThin ? (
-            <SettingsTabsList shouldShowSquad={!!squadId} />
-          ) : undefined}
         </Tabs>
       </Aside.Section>
 
-      <Divider my="lg" mx="-1rem" display={screenIsThin ? "none" : undefined} />
+      <Divider my="lg" mx="-1rem" />
 
       <Aside.Section>
         <UserAuthSection />

@@ -51,19 +51,19 @@ const FlashSquadAppShell: React.FC<AppShellProps> = ({
       setNavigationPanelIsOpen(false);
       setSettingsPanelIsOpen(false);
     } else {
-      setNavigationPanelIsOpen(true);
+      setNavigationPanelIsOpen(false);
       setSettingsPanelIsOpen(false);
     }
   }, [screenIsThin, screenIsWide]);
 
   // Only allow one side panel to be open at a time if the screen is thin.
   useEffect(() => {
-    if (screenIsThin && navigationPanelIsOpen) {
+    if (!screenIsWide && navigationPanelIsOpen) {
       setSettingsPanelIsOpen(false);
     }
   }, [navigationPanelIsOpen]);
   useEffect(() => {
-    if (screenIsThin && settingsPanelIsOpen) {
+    if (!screenIsWide && settingsPanelIsOpen) {
       setNavigationPanelIsOpen(false);
     }
   }, [settingsPanelIsOpen]);

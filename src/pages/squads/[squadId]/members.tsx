@@ -40,6 +40,8 @@ const GetSquadMembersQuery = gql`
           tokenId
           persona {
             id
+            displayName
+            bio
             profileImage {
               id
               altText
@@ -64,11 +66,7 @@ const SquadMembersPage = () => {
   } = useRouter();
 
   const {
-    data: {
-      squadsByPk: {
-        nftCollection: { nfts = [] },
-      },
-    },
+    data: { squadsByPk: { nftCollection: { nfts = [] } = {} } = {} } = {},
   } = useQuery(GetSquadMembersQuery, {
     variables: { squadId },
     skip: !squadId,
@@ -78,9 +76,9 @@ const SquadMembersPage = () => {
     <FlashSquadAppShell pageTitle="Members">
       {nfts.map(
         ({
+          tokenId,
           persona: {
             id: personaId,
-            externalId,
             displayName,
             bio,
             profileImage: {
@@ -113,19 +111,9 @@ const SquadMembersPage = () => {
                   <Group position="apart" mb="xs" h="100%" w="100%">
                     <Center>
                       <Title order={2} weight={300}>
-                        {displayName ?? externalId}
+                        {displayName ?? tokenId}
                       </Title>
                     </Center>
-
-                    <Group position="center">
-                      <ActionIcon variant="light" color="blue" radius="md">
-                        <FontAwesomeIcon icon={faTwitter} />
-                      </ActionIcon>
-
-                      <ActionIcon variant="light" color="gray" radius="md">
-                        <FontAwesomeIcon icon={faEthereum} />
-                      </ActionIcon>
-                    </Group>
                   </Group>
 
                   <Text>{bio}</Text>

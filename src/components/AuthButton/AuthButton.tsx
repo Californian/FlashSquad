@@ -76,7 +76,8 @@ const AuthButton: React.FC<AuthButtonProps> = ({ fullWidth = false }) => {
             if (session?.user) {
               disconnect();
               await signOut({ redirect: false });
-              router.push("/");
+              await router.push("/");
+              router.reload();
             } else {
               if (!isConnected) {
                 connect();

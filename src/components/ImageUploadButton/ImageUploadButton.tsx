@@ -100,7 +100,8 @@ const ImageUploadButton: React.FC<ImageUploadButtonProps> = ({
               minHeight,
               maxHeight,
               aspectRatio,
-              width: "auto",
+              width: "100%",
+              height: "100%",
               borderRadius,
             }}
           >

@@ -1,5 +1,12 @@
 import { useContext, useEffect, useState } from "react";
-import { Group, Stack, Switch, Text, useMantineTheme } from "@mantine/core";
+import {
+  Group,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Text,
+  useMantineTheme,
+} from "@mantine/core";
 import {
   faComputer,
   faM,
@@ -48,8 +55,8 @@ const ColorSchemeToggle = () => {
   );
 
   return (
-    <Stack align="flex-end" justify="center">
-      <Group align="flex-end" spacing="0.2rem">
+    <Stack justify="center">
+      <SimpleGrid cols={2}>
         <Text sx={{ lineHeight: "2" }}>
           {colorSchemeIsManual ? "Manual" : "Automatic"}
         </Text>
@@ -77,10 +84,10 @@ const ColorSchemeToggle = () => {
             },
           })}
         />
-      </Group>
+      </SimpleGrid>
 
       {colorSchemeIsManual ? (
-        <Group align="flex-end" spacing="0.2rem">
+        <SimpleGrid cols={2}>
           <Text sx={{ lineHeight: "2" }}>
             {colorSchemeIsLight ? "Light" : "Dark"}
           </Text>
@@ -108,9 +115,11 @@ const ColorSchemeToggle = () => {
               },
             })}
           />
-        </Group>
+        </SimpleGrid>
       ) : (
-        <Group align="flex-end" spacing="0.2rem">
+        <>
+          {/*
+        <Group spacing="0.2rem">
           <Text sx={{ lineHeight: "2" }}>
             {colorSchemeFollowsSun ? "Follow Sun" : "Follow System"}
           </Text>
@@ -138,7 +147,9 @@ const ColorSchemeToggle = () => {
               },
             })}
           />
-        </Group>
+          </Group>
+          */}
+        </>
       )}
     </Stack>
   );

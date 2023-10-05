@@ -20,7 +20,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   return (
     <Navbar
       p="md"
-      width={navigationPanelIsOpen ? { sm: 200, lg: 300 } : { base: 0 }}
+      width={navigationPanelIsOpen ? { sm: 300, lg: 300 } : { base: 0 }}
       display={navigationPanelIsOpen ? undefined : "none"}
       sx={{ zIndex: 99 }}
     >
@@ -29,25 +29,29 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         display={screenIsThin ? "none" : undefined}
         mx="-1rem"
         mt="-1rem"
+        sx={{ overflowY: "scroll", overflowX: "hidden" }}
       >
         <SquadList screenIsThin={screenIsThin} />
-        <NavLink
-          icon={<FontAwesomeIcon icon={faComments} />}
-          label="Messages"
-          component={Link}
-          href={`/messages`}
-          active={router.pathname === "/messages"}
-        />
       </Navbar.Section>
       <Divider my="lg" mx="-1rem" display={screenIsThin ? "none" : undefined} />
       <Navbar.Section>
         <Anchor href="#">Terms of Service</Anchor>
       </Navbar.Section>
       <Divider my="lg" mx="-1rem" display={screenIsThin ? undefined : "none"} />
-      <Navbar.Section grow display={screenIsThin ? undefined : "none"}>
-        <Stack align="flex-end" justify="flex-end" h="100%">
+      <Navbar.Section display={screenIsThin ? undefined : "none"}>
+        <Stack align="flex-end" justify="flex-end" mt="5rem" h="10rem">
           <SquadDetails width="100%" />
         </Stack>
+      </Navbar.Section>
+      <Divider my="lg" mx="-1rem" display={screenIsThin ? undefined : "none"} />
+      <Navbar.Section
+        grow
+        display={screenIsThin ? undefined : "none"}
+        mx="-1rem"
+        mt="-1rem"
+        sx={{ overflowY: "scroll", overflowX: "hidden" }}
+      >
+        <SquadList screenIsThin={screenIsThin} />
       </Navbar.Section>
     </Navbar>
   );

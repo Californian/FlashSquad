@@ -16,3 +16,5 @@ export * from "./SquadList";
 export * from "./SquadAccordionLabel";
 export * from "./FlashSquadMarkdown";
 export * from "./AuthChecker";
+export * from "./PersonaSelector";
+export * from "./SquadVisibilityModal";
